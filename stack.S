@@ -9,7 +9,9 @@
 	.equ w2, 16
 	.equ w3, 24
 	.equ w4, 32
+
 	.equ w1n, -8
+	.equ w2n, -16
 	.equ w4n, -32
 
 	# Shift number bits to convert between words and bytes.
@@ -35,6 +37,7 @@
 	.global stack_push
 	.global stack_pop
 	.global stack_print
+	.global stack_print_name
 	.global stack_contains
 
 # Initialize and return a stack.
@@ -241,17 +244,12 @@ name_invalid_char:
     addi a7, x0, 93	# Service code 93 terminates program.
     ecall
 
-# Print a stack.
-# In:  a0, ptr to a stack struct.
-# Ret: Nothing.
-# Out: Text printed.
-stack_print:
+# Print the stack name.
+stack_print_name:
    # Configure stack
-    addi sp, sp, w4n	# Advance stack pointer.
+    addi sp, sp, w2n	# Advance stack pointer.
     sw ra, 0(sp)	# Save ra.
     sw s1, w1(sp)	# Save s1.
-    sw s2, w2(sp)	# Save s2.
-    sw s3, w3(sp)	# Save s3.
 
     mv s1, a0		# Save stack ptr.
 
@@ -270,6 +268,28 @@ stack_print:
     lw a1, stack_desc(s1)
     addi a7, x0, 64	# Linux write.
     ecall
+
+    # Restore stack.
+    lw s1, w1(sp)		# Restore s1.
+    lw ra, 0(sp)		# Restore ra.
+    addi sp, sp, w2		# Restore sp.
+    ret
+
+# Print a stack.
+# In:  a0, ptr to a stack struct.
+# Ret: Nothing.
+# Out: Text printed.
+stack_print:
+   # Configure stack
+    addi sp, sp, w4n	# Advance stack pointer.
+    sw ra, 0(sp)	# Save ra.
+    sw s1, w1(sp)	# Save s1.
+    sw s2, w2(sp)	# Save s2.
+    sw s3, w3(sp)	# Save s3.
+
+    mv s1, a0		# Save stack ptr.
+
+    jal stack_print_name
 
     jal pcr
 
@@ -319,7 +339,6 @@ sp_loop_next:
     addi s2, s2, w1		# Point to next item.
     j sp_loop_next
 sp_loop_end:
-    jal pcr
 
     # Restore stack.
     lw s3, w3(sp)		# Restore s3.
