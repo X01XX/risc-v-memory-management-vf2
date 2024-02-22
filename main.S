@@ -1,22 +1,61 @@
 
 .text
-
 	.global _start
 
-	# Word sizes. # Change if a word is not 32 bits, 4 bytes.
-	
 # External labels:
 	.extern mem_init
 	.extern mem_left
-   
+	.extern mem_alloc
+
+   	.extern nu2h
+
+	.extern stack_new
+	.extern stack_push
+	.extern stack_pop
+	.extern stack_print
+	.extern stack_contains
+	
+   	
 _start:
     # Init alloc-only memory bank.
     jal mem_init
 
     jal mem_left
     
-    # Init links struct alloc/dealloc stack-array memory.
- 
+    li a0, 2		# Num words.
+    la a1, stack_name	# Name ptr.
+    jal stack_new
+    mv s1, a1		# Save stack ptr
+
+    jal mem_left
+    
+    mv a0, s1
+    jal stack_print
+    
+    mv a0, s1
+    li a1, 34
+    jal stack_push
+
+    mv a0, s1
+    jal stack_print
+    
+    mv a0, s1
+    li a1, 17
+    jal stack_push
+
+    mv a0, s1
+    jal stack_print
+    
+    mv a0, s1
+    li a1, 35
+    jal stack_contains
+    mv a0,a1
+    jal nu2d
+    jal pcr
+
+    # Exit program
     addi a0, x0, 0	# Use 0 return code
     addi a7, x0, 93	# Service code 93 terminates program
     ecall
+
+stack_name: .asciz "fish"

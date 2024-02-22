@@ -23,7 +23,8 @@
 
 # External labels.
 	.extern nu2d
-
+	.extern strlen
+	
 # Word sizes. # Change if a word is not 32 bits, 4 bytes.
 	.equ w1, 8
 
@@ -62,30 +63,30 @@ mem_alloc:
    
 # Display invalid memory request, then halt.
 invalid_request:
+
+    la a0, invalid_str		# Load addr of string.
+    jal strlen			# Get length into a2.
     addi a0, x0, 1		# StdOut
     la a1, invalid_str		# Load addr of string
-    addi a2, x0, 34		# String length
     addi a7, x0, 64		# linux write call
     ecall
- 
+    
     addi	a0, x0, 1	# Load return code
     addi	a7, x0, 93	# Service code 93 terminates
     ecall			# Call linux to terminate the program
-
-invalid_str:	 .ascii "mem_alloc: Invalid memory request\n"
-
+    
 # Display out of memory error, then halt.
 out_of_memory:
+    la a0, out_str		# Load addr of string.
+    jal strlen			# Get length into a2.
+    addi a0, x0, 1		# StdOut
     la a1, out_str		# Load addr of string
-    addi a2, x0, 14		# String length
     addi a7, x0, 64		# linux write call
     ecall
     
     addi	a0, x0, 2	# Load return code
     addi	a7, x0, 93	# Service code 93 terminates
     ecall			# Call linux to terminate the program
-
-out_str:	 .ascii "Out of memory\n"
 
 # Print the amount of memory that is left.
 # In:  Nothing.
@@ -106,13 +107,14 @@ mem_left:
     
     mv a0, t3		# Load number to print
     jal nu2d
-    
+ 
+    la a0, mem_left_str1	# Load addr of string.
+    jal strlen			# Get length into a2.
     addi a0, x0, 1		# StdOut
     la a1, mem_left_str1	# Load addr of string
-    addi a2, x0, 10		# String length
     addi a7, x0, 64		# linux write call
     ecall
-
+    
     la t0, mem_ptr	# Get ptr to memory start.
     la t2, end		# Get ptr to memory end.
     sub t3, t2, t0	# Get difference, in bytes.
@@ -120,10 +122,11 @@ mem_left:
     
     mv a0, t3		# Load number to print.
     jal nu2d		# Print it in base 10.
-    
+  
+    la a0, mem_left_str2	# Load addr of string.
+    jal strlen			# Get length into a2.
     addi a0, x0, 1		# StdOut
     la a1, mem_left_str2	# Load addr of string
-    addi a2, x0, 28		# String length
     addi a7, x0, 64		# linux write call
     ecall
     
@@ -133,9 +136,10 @@ mem_left:
 
     ret
 
-mem_left_str1: .ascii	" Words of "
-mem_left_str2: .ascii	" allocate-only memory left.\n"
-
+invalid_str:	.asciz "mem_alloc: Invalid memory request\n"
+out_str:	.asciz "Out of memory\n"
+mem_left_str1:	.asciz	" Words of "
+mem_left_str2:	.asciz	" allocate-only memory left.\n"
 cr: .asciz "\n"
 
 .data
