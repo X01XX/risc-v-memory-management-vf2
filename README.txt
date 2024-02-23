@@ -109,5 +109,5 @@ Element:
 
   element_dealloc:
 
-    15 - Invalid element ID.  (pushing a non-link struct, invalid address?)
+    15 - Invalid element ID.  (pushing a non-element struct, invalid address?)
 
