@@ -1,10 +1,13 @@
 
 .text
 
-	.global nu2d
-	.global nu2h
-        .global pcr
+	.global prtdec
+	.global prthex
+        .global prtnl
         .global strlen
+	.global prtchr
+	.global prtstr
+	.global endprg
 
 	# Word sizes. # Change if a word is not 32 bits, 4 bytes.
 	.equ w1, 8
@@ -23,7 +26,7 @@
 
 # Print a unsigned number to StdOut, in base 10.
 # In: a0 - A number    
-nu2d:
+prtdec:
     # Configure stack.
     addi sp, sp, w6n		# Advance sp for stack frame.
     sw ra, 0(sp)                # Save ra.
@@ -37,19 +40,19 @@ nu2d:
     
     li s1, 10			# Set base.
     li s2, 1			# Init divisor.
-nu2d_loop:
+prtdec_loop:
     mul t0, s2, s1		# Get next larger divisor.
-    beqz t0, nu2d_end_loop	# Check for overflow.
-    bgt t0, a0, nu2d_end_loop	# Check for next divisor GT a0.
+    beqz t0, prtdec_end_loop	# Check for overflow.
+    bgt t0, a0, prtdec_end_loop	# Check for next divisor GT a0.
 
     mv s2, t0			# Set divisor to next.
 
-    j nu2d_loop
-nu2d_end_loop:			# Largest divisor less than a0 in s2.
+    j prtdec_loop
+prtdec_end_loop:			# Largest divisor less than a0 in s2.
 
     mv s3, a0			# Copy a0 into register, to save.
-nu2d_loop2:
-    beqz s2, nu2d_end_loop2	# End loop when divisor becomes zero.
+prtdec_loop2:
+    beqz s2, prtdec_end_loop2	# End loop when divisor becomes zero.
     
     divu s4, s3, s2		# Divide passed number by divisor.
     addi s5, s4, '0'		# Get character to print.
@@ -65,8 +68,8 @@ nu2d_loop2:
     sub s3, s3, t0		# Get rmainder for next pass.
  
     divu s2, s2, s1		# Divide divisor by base.
-    j nu2d_loop2
-nu2d_end_loop2:
+    j prtdec_loop2
+prtdec_end_loop2:
 
   # Restore stack.
     lw s5, w5(sp)		# Restore s5.
@@ -81,7 +84,7 @@ nu2d_end_loop2:
 
 # Print a unsigned number to StdOut, in base 16.
 # In: a0 - A number    
-nu2h:
+prthex:
     # Configure stack.
     addi sp, sp, w6n		# Advance sp for stack frame.
     sw ra, 0(sp)                # Save ra.
@@ -102,31 +105,31 @@ nu2h:
     
     li s1, 16			# Set base.
     li s2, 1			# Init divisor.
-nu2h_loop:
+prthex_loop:
     mul t0, s2, s1		# Get next larger divisor.
-    beqz t0, nu2h_end_loop	# Check for overflow.
-    bgt t0, s3, nu2h_end_loop	# Check for next divisor GT a0.
+    beqz t0, prthex_end_loop	# Check for overflow.
+    bgt t0, s3, prthex_end_loop	# Check for next divisor GT a0.
 
     mv s2, t0			# Set divisor to next.
 
-    j nu2h_loop
-nu2h_end_loop:			# Largest divisor less than a0 in s2.
+    j prthex_loop
+prthex_end_loop:			# Largest divisor less than a0 in s2.
 
-nu2h_loop2:
-    beqz s2, nu2h_end_loop2	# End loop when divisor becomes zero.
+prthex_loop2:
+    beqz s2, prthex_end_loop2	# End loop when divisor becomes zero.
     
     divu s4, s3, s2		# Divide passed number by divisor.
     
     li t0, 10			# Load cutoff for first letter.
-    bge s4, t0, nu2h_letr	# Jump to load letter value.
+    bge s4, t0, prthex_letr	# Jump to load letter value.
     
     addi s5, s4, '0'		# Get digit value to print.
-    j nu2h_print_char
+    j prthex_print_char
     
-nu2h_letr:
+prthex_letr:
     addi s5, s4, 'A' - 10
 
-nu2h_print_char:
+prthex_print_char:
     addi a0, x0, 1		# StdOut
     la a1, char			# Load addr of string
     sb s5, 0(a1)		# Store character.
@@ -138,8 +141,8 @@ nu2h_print_char:
     sub s3, s3, t0		# Get rmainder for next pass.
  
     divu s2, s2, s1		# Divide divisor by base.
-    j nu2h_loop2
-nu2h_end_loop2:
+    j prthex_loop2
+prthex_end_loop2:
 
   # Restore stack.
     lw s5, w5(sp)		# Restore s5.
@@ -153,13 +156,16 @@ nu2h_end_loop2:
     ret
 
 # Print a carriage return.
-pcr:
+# In:  Nothing.
+# Ret: Nothing.
+# Out: Newline to StdOut.
+prtnl:
     # Configure stack.
     addi sp, sp, w1n		# Advance sp for stack frame.
     sw ra, 0(sp)                # Save ra.
 
     addi a0, x0, 1		# StdOut
-    la a1, cr			# Load addr of string
+    la a1, nl			# Load addr of string
     addi a2, x0, 1		# String length
     addi a7, x0, 64		# linux write call
     ecall
@@ -169,6 +175,61 @@ pcr:
     addi sp, sp, w1             # Restore sp.
 
     ret
+
+
+
+# Print a caracter.
+# In:  a0 - ptr to a character.
+# Ret: Nothing.
+# Out: Character to StdOut.
+prtchr:
+    # Configure stack.
+    addi sp, sp, w1n		# Advance sp for stack frame.
+    sw ra, 0(sp)                # Save ra.
+
+    mv a1, a0			# Load addr of character
+    addi a0, x0, 1		# StdOut
+    addi a2, x0, 1		# String length
+    addi a7, x0, 64		# linux write call
+    ecall
+    
+  # Restore stack.
+    lw ra, 0(sp)		# Restore ra.
+    addi sp, sp, w1             # Restore sp.
+
+    ret
+
+# Print a string.
+# In:  a0 - ptr to a zero delimited string.
+# Ret: Nothing.
+# Out: String to StdOut.
+prtstr:
+    # Configure stack.
+    addi sp, sp, w2n	# Advance sp for stack frame.
+    sw ra, 0(sp)        # Save ra.
+    sw s1, w1(sp)	# Save s1.
+
+    mv s1, a0		# Save ptr to string.
+    jal strlen		# String len to a2.
+    addi a0, x0, 1	# StdOut
+    mv a1, s1		# Load addr of string.
+    addi a7, x0, 64	# Linux write.
+    ecall
+
+  # Restore stack.
+    lw s1, w1(sp)	# Restore s1.
+    lw ra, 0(sp)	# Restore ra.
+    addi sp, sp, w2     # Restore sp.
+
+    ret
+
+# End programg.
+# In:  a0 - return code.
+# Ret: Nothing.
+# Out: Return code.
+endprg:
+    addi a7, x0, 93	# Service code 93 terminates program.
+    ecall
 
 # Return the length of a string.
 # In:  a0 = ptr to string.
@@ -203,5 +264,5 @@ sl_loop_done:
 
 .data
 char: .word 0			# Storage for 1 byte.
-cr:   .ascii "\n"
+nl:   .ascii "\n"
 hprefix: .ascii "0x"

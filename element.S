@@ -1,0 +1,379 @@
+# Implement element struct and methods.
+#
+# See element struct, below.
+
+.text
+
+      # Word sizes. # Change if a word is not 32 bits, 4 bytes.
+        .equ w1, 8
+        .equ w2, 16
+        .equ w3, 24
+        .equ w4, 32
+
+        .equ w1n, -8
+        .equ w2n, -16
+        .equ w3n, -24
+        .equ w4n, -32
+
+# Struct element:
+        .equ element_id, 	0
+        .equ element_name, w1
+        .equ element_atomic_number,  w2
+        .equ element_words,  3
+
+# External labels:
+	.extern endprg
+	.extern prtchr
+	.extern prtstr
+	.extern prtdec
+
+        .extern mem_init
+        .extern mem_alloc
+
+        .extern stack_array_new
+        .extern stack_array_alloc
+        .extern stack_array_dealloc
+        .extern stack_array_print
+
+	.extern is_link
+	.extern link_val
+	.extern link_print
+	.extern get_link_val
+	.extern get_link_next
+	.extern link_list_dealloc
+
+# Global labels:
+	.global element_init
+	.global element_new
+	.global element_dealloc
+	.global element_list_dealloc
+	.global element_stack_print
+	.global element_print
+	.global element_list_print
+
+# ID to help identify a element instance.
+# A strange prime number is used for less probability of matching a random value.
+	.equ element_id_val, 1153
+
+# Initialize element storage.
+# mem_init needs to be called from main before calling this.
+#
+# In: a0 contains the number of items to allow for.
+element_init:
+    # Configure stack.
+    addi sp, sp, w1n		# Advance sp for stack frame.
+    sw ra, 0(sp)                # Save ra.
+
+    li a1, element_words	# Load number words per item.
+    la a2, element_str		# Load stack_array decription ptr.
+    jal stack_array_new		# sa struct adr to a1
+
+    # Save element sa ptr.
+    la t0, element_sa_ptr
+    sw a1, 0(t0)
+
+    # Restore stack.
+    lw ra, 0(sp)		# Restore ra.
+    addi sp, sp, w1             # Restore sp.
+
+    ret
+
+# Return a new element.
+# In:  a0 = Ptr to name string.
+#      a1 = Atomic number.
+# Ret: a1 = Link instance ptr.
+element_new:
+    # Configure stack.
+    addi sp, sp, w3n		# Advance sp for stack frame.
+    sw ra, 0(sp)                # Save ra.
+    sw s1, w1(sp)		# Save s1.
+    sw s2, w2(sp)		# Save s2.
+
+    # Save args.
+    mv s1, a0			# Save name ptr to s1.
+    mv s2, a1			# Save atomic number to s2.
+
+    # Allocate a new element instance, or stack empty.
+    la t0, element_sa_ptr
+    lw a0, 0(t0)		# Get element stack_array pointer.
+    jal stack_array_alloc	# Get a new item into a1, or stack empty.
+
+    # Load values into element instance.
+    li t0, element_id_val	# Load the element id value.
+    sw t0, element_id(a1)	# Set element ID.
+    sw s1, element_name(a1)	# Store element name ptr.
+    sw s2, element_atomic_number(a1)	# Store atomic number.
+
+    # Restore stack.
+    lw s2, w2(sp)		# Restore s2.
+    lw s1, w1(sp)		# Restore s1.
+    lw ra, 0(sp)		# Restore ra.
+    addi sp, sp, w3             # Restore sp.
+
+    ret
+
+# Deallocate a element.
+# In: a0 contains a pointer to a element instance.
+# Ret: Nothing.
+element_dealloc:
+    # Configure stack.
+    addi sp, sp, w1n		# Advance sp for stack frame.
+    sw ra, 0(sp)                # Save ra.
+
+    # Check instance ID.
+    lw t0, element_id(a0)	# Load instance ID.
+    li t1, element_id_val	# Load expected ID.
+    bne t0, t1, eid_err		# Error if ne.
+
+    # Deallocate.
+    mv a1, a0			# Item ptr to a1.
+    la t0, element_sa_ptr
+    lw a0, 0(t0)		# Get element stack_array pointer.
+    jal stack_array_dealloc	# Add instance back to element stack.
+
+    # Restore stack.
+    lw ra, 0(sp)		# Restore ra.
+    addi sp, sp, w1             # Restore sp.
+
+    ret
+
+eid_err:
+    la a0, eid_err_str
+    jal prtstr			# Print error string.
+
+    addi a0, x0, 15		# Load return code.
+    jal endprg
+
+# Verify a ptr references a element instance, or halt.
+# In: a0 = Ptr to instance.
+is_element:
+    lw t0, element_id(a0)  # Load instance ID val.
+    li t1, element_id_val  # Load expected ID val.
+
+    bne t0, t1, eid_err
+    ret
+
+# Accessor to get element name.
+# In:  a0 = ptr to element instance.
+# Ret: a1 = element name.
+get_element_name:
+    # Check instance ID.
+    lw t0, element_id(a0)       # Load instance ID.
+    li t1, element_id_val       # Load expected ID.
+    bne t0, t1, eid_err		# Error if ne.
+
+    lw a1, element_name(a0)     # Load element next to return.
+
+    ret
+
+# Accessor to get element atomic_number.
+# In:  a0 = ptr to element instance.
+# Ret: a1 = element atomic_number.
+get_element_atomic_number:
+    # Check instance ID.
+    lw t0, element_id(a0)       # Load instance ID.
+    li t1, element_id_val       # Load expected ID.
+    bne t0, t1, eid_err		# Error if ne.
+
+    lw a1, element_atomic_number(a0)     # Load element next to return.
+
+    ret
+
+# Print the element stack.
+# In:  Nothing.
+# Ret: Nothing.
+# Out: Prints info.
+element_stack_print:
+    # Configure stack.
+    addi sp, sp, w1n		# Advance sp for stack frame.
+    sw ra, 0(sp)                # Save ra.
+
+    la t0, element_sa_ptr
+    lw a0, 0(t0)		# Load element stack ptr.
+
+    jal stack_array_print	# Print the stack.
+   
+    # Restore stack.
+    lw ra, 0(sp)		# Restore ra.
+    addi sp, sp, w1             # Restore sp.
+
+    ret
+
+# Print an element instance.
+# In:  a0 = ptr to an element instance.
+# Ret: Nothing.
+# Out: Prints info.
+element_print:
+    # Cotfigure stack.
+    addi sp, sp, w2n		# Advance sp for stack frame.
+    sw ra, 0(sp)                # Save ra.
+    sw s1, w1(sp)		# Save s1.
+
+    mv s1, a0			# Save a0.
+
+    # Check instance ID.
+    lw t0, element_id(a0)	# Load instance ID.
+    li t1, element_id_val	# Load expected ID.
+    bne t0, t1, eid_err		# Error if ne.
+
+    la a0, left_bracket
+    jal prtchr
+
+    la a0, el_name_str
+    jal prtstr
+
+    lw a0, element_name(s1)
+    jal prtstr
+
+    la a0, el_an_str
+    jal prtstr
+
+    lw a0, element_atomic_number(s1)
+    jal prtdec
+
+    la a0, right_bracket
+    jal prtchr
+
+    # Restore stack.
+    lw s1, w1(sp)		# Restore s1.
+    lw ra, 0(sp)		# Restare ra.
+    addi sp, sp, w2             # Restore sp.
+
+    ret
+
+# Print an element linked list.
+# In: a0 = ptr to a link.
+#     a1 = ptr to a string to use as a separator.
+element_list_print:
+    # Configure stack.
+    addi sp, sp, w4n		# Advance sp for stack frame.
+    sw ra, 0(sp)                # Save ra.
+    sw s1, w1(sp)		# Save s1.
+    sw s2, w2(sp)		# Save s2.
+    sw s3, w3(sp)		# Save s3.
+
+    # Save args.
+    mv s1, a0			# Save link ptr.
+    mv s2, a1			# Save separator ptr to s2.
+
+    # Check list arg.
+    mv a0, s1			# Load link ptr
+    jal is_link			# Check link id.
+
+    la a0, left_paren		# Print list prefix, left paren.
+    jal prtchr
+
+    # Check for empty list.
+    mv a0, s1			# Get link value.
+    jal get_link_val
+    beq a1, x0, epl_loop_end
+
+epl_loop_next:
+    mv a0, s1			# Load link value, to a1.
+    jal get_link_val
+    mv s3, a1
+
+    mv a0, s3			# Print it.
+    jal element_print
+
+    mv a0, s1			# Load link next.
+    jal get_link_next
+
+    beq a1, x0, epl_loop_end
+
+    mv s1, a1			# Update link next.
+
+    mv a0, s2
+    jal prtstr			# Print separator.
+
+    j epl_loop_next
+
+epl_loop_end:
+    
+    la a0, right_paren		# Print list suffix, right paren.
+    jal prtchr
+
+    # Restore stack.
+    lw s3, w3(sp)		# Restore s2.
+    lw s2, w2(sp)		# Restore s2.
+    lw s1, w1(sp)		# Restore s1.
+    lw ra, 0(sp)		# Restore ra.
+    addi sp, sp, w4             # Restore sp.
+
+    ret
+
+# Deallocate a element list.
+# In: a0 = list ptr.
+element_list_dealloc:
+    # Configure stack.
+    addi sp, sp, w4n		# Advance sp for stack frame.
+    sw ra, 0(sp)                # Save ra.
+    sw s1, w1(sp)		# Save s1.
+    sw s2, w2(sp)		# Save s2.
+    sw s3, w3(sp)		# Save s3.
+
+   # Save arg.
+    mv s1, a0                   # Save link ptr.
+    mv s3, a0                   # Save link ptr.
+
+    # Check instance ID.
+    mv a0, s1			# Get link value.
+    jal is_link
+
+    # Check for empty list.
+    mv a0, s1			# Get link value.
+    jal get_link_val
+    beq a1, x0, edl_loop_end
+
+edl_loop_next:
+    mv a0, s1
+    jal get_link_val		# Get element ptr in a1.
+
+    # Check element ID.
+    lw t0, element_id(a1)
+    li t1, element_id_val
+    bne t1, t0, eid_err
+    
+    # Deallocate the element.
+    mv a0, a1
+    jal element_dealloc
+
+    # Point to the next link.
+    mv a0, s1
+    jal get_link_next
+    mv s1, a1
+
+    beq s1, x0, edl_loop_end
+
+    j edl_loop_next
+
+edl_loop_end:
+    # Deallocate the links in the list.
+    mv a0, s3
+    jal link_list_dealloc
+
+    # Restore stack.
+    lw s3, w3(sp)		# Restore s3.
+    lw s2, w2(sp)		# Restore s2.
+    lw s1, w1(sp)		# Restore s1.
+    lw ra, 0(sp)		# Restore ra.
+    addi sp, sp, w4             # Restore sp.
+
+    ret
+
+# Name for element stack_array instance.
+element_str:       .asciz  "Element"
+
+el_name_str:	.asciz "Name: "
+el_an_str:	.asciz ", AN: "
+eid_err_str:	.asciz  "Invalid instance element id"
+left_bracket:	.asciz "["
+right_bracket:	.asciz "]"
+left_paren:	.asciz "("
+right_paren:	.asciz ")"
+
+.data
+
+# Storage for element stack_array struct ptr.
+element_sa_ptr:   .word 0
+

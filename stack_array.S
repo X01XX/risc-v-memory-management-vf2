@@ -45,6 +45,10 @@
 	.global stack_array_print
 
 # External labels:
+	.extern endprg			# End program.
+	.extern prthex			# Print a number in base 16.
+	.extern prtstr			# Print a string.
+
 	.extern mem_alloc		# Get memory from allocate-only memory store.
 
 	.extern stack_new
@@ -53,7 +57,6 @@
 	.extern stack_print
 	.extern stack_print_name
 	.extern stack_contains
-	.extern nu2h
 
 # Generate a stack-array
 # mem_init needs to be called from main before calling this.
@@ -175,27 +178,19 @@ stack_array_print:
 
     # Print stack_array address prefix.
     la a0, sa_adr_str	# Load addr of prefix string.
-    jal strlen		# String len to a2.
-    addi a0, x0, 1	# StdOut
-    la a1, sa_adr_str	# Load addr of prefix string.
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     # Print stack_array address.
     mv a0, s1
-    jal nu2h		# Print addr.
+    jal prthex		# Print addr.
 
     # Print stack address prefix.
     la a0, stk_adr_str
-    jal strlen		# String len to a2.
-    addi a0, x0, 1	# StdOut
-    la a1, stk_adr_str	# Load addr of prefix string.
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     # Print stack address.
     lw a0, sa_stack_ptr(s1)
-    jal nu2h
+    jal prthex
 
     # Print stack.
     lw a0, sa_stack_ptr(s1)
@@ -203,17 +198,13 @@ stack_array_print:
     
     # Print array address prefix.
     la a0, ary_adr_str
-    jal strlen		# String len to a2.
-    addi a0, x0, 1	# StdOut
-    la a1, ary_adr_str	# Load addr of prefix string.
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     # Print array address.
     lw a0, sa_array_ptr(s1)
-    jal nu2h
+    jal prthex
 
-    jal pcr
+    jal prtnl
 
     # Cleanup stack.
     lw ra, 0(sp)	# Restore ra.
@@ -225,28 +216,18 @@ stack_array_print:
 # Display invalid request, then halt.
 invalid_num_items:
     la a0, invalid_num_items_str
-    jal strlen		# String len to a2.
-    addi a0, x0, 1	# StdOut
-    la a1, invalid_num_items_str	# Load addr of prefix string.
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     addi a0, x0, 8	# Load return code.
-    addi a7, x0, 93	# Service code to terminate.
-    ecall
+    jal endprg
 
 # Display invalid request, then halt.
 invalid_num_words:
     la a0, invalid_num_words_str
-    jal strlen		# String len to a2.
-    addi a0, x0, 1	# StdOut
-    la a1, invalid_num_words_str	# Load addr of prefix string.
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     addi a0, x0, 9	# Load return code.
-    addi a7, x0, 93	# Service code to terminate.
-    ecall
+    jal endprg
 
 # Get an address of an array item from the stack.
 # In:  a0 - stack_array ptr.
@@ -325,15 +306,10 @@ sad_err:
     jal stack_print_name
 
     la a0, sca_err_str
-    jal strlen			# Get string len into a2.
-    addi a0, x0, 1		# StdOut
-    la a1, sca_err_str		# Load string addr for call.
-    addi a7, x0, 64		# Linux write.
-    ecall
+    jal prtstr
 
-    addi a0, x0, 8	# Load return code
-    addi a7, x0, 93	# Service code 93 terminates program.
-    ecall
+    addi a0, x0, 10	# Load return code
+    jal endprg
 
 invalid_num_words_str:     .asciz "stack_array_new: Invalid number of words"
 invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"

@@ -26,11 +26,14 @@
 	.equ    stack_words,	4	# Number words in this struct.
 
 # External labels.
-	.extern mem_alloc		# Get memory from allocate-only memory store.
+	.extern endprg			# End program.
 	.extern strlen			# Load string len into a2.
-	.extern nu2d			# Print a number as base 10.
-	.extern nu2h			# Print a number as base 16.
-	.extern pcr			# Print a newline.
+	.extern prtdec			# Print a number as base 10.
+	.extern prthex			# Print a number as base 16.
+	.extern prtnl			# Print a newline.
+	.extern prtstr			# Print a string.
+
+	.extern mem_alloc		# Get memory from allocate-only memory store.
 
 # Global labels.
 	.global stack_new
@@ -95,18 +98,13 @@ invalid_request:
     mv s3, a0		# Save number words.
 
     la a0, invalid_str
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    la a1, invalid_str  # Load string addr for call.
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     mv a0, s3		# Load number words.
-    jal nu2d		# Print number as base 10.
+    jal prtdec		# Print number as base 10.
 
     addi a0, x0, 3	# Load return code
-    addi a7, x0, 93	# Service code 93 terminates program.
-    ecall
+    jal endprg
 
 # Push a value onto the a stack.
 # In:  a0, ptr to a stack.
@@ -133,22 +131,13 @@ stack_full:
     mv s1, a0		# Save stack ptr.
 
     lw a0, stack_desc(s1)
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    lw a1, stack_desc(s1)
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     la a0, sf_str
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    la a1, sf_str
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     addi a0, x0, 4	# Load return code
-    addi a7, x0, 93	# Service code 93 terminates program.
-    ecall
+    jal endprg
 
 # Pop a value from the a stack.
 # In:  a0, ptr to a stack.
@@ -174,22 +163,13 @@ stack_empty:
     mv s1, a0		# Save stack ptr.
 
     lw a0, stack_desc(s1)
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    lw a1, stack_desc(s1)
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     la a0, sp_empty_str
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    la a1, sp_empty_str
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
  
     addi a0, x0, 5	# Load return code
-    addi a7, x0, 93	# Service code 93 terminates program.
-    ecall
+    jal endprg
  
 # Check a stack name string.
 # In:  a0 = pointer to string.
@@ -222,27 +202,17 @@ cn_loop_done:
 
 name_too_short:
     lw a0, cn_err1_str
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    lw a1, cn_err1_str
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     addi a0, x0, 6	# Load return code
-    addi a7, x0, 93	# Service code 93 terminates program.
-    ecall
+    jal endprg
 
 name_invalid_char:
     lw a0, cn_err2_str
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    lw a1, cn_err2_str
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     addi a0, x0, 7	# Load return code
-    addi a7, x0, 93	# Service code 93 terminates program.
-    ecall
+    jal endprg
 
 # Print the stack name.
 stack_print_name:
@@ -255,19 +225,11 @@ stack_print_name:
 
     # Print stack name prefix.
     la a0, stack_print_prefix
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    la a1, stack_print_prefix
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     # Print stack name.
     lw a0, stack_desc(s1)
-    jal strlen		# Get string len into a2.
-    addi a0, x0, 1	# StdOut
-    lw a1, stack_desc(s1)
-    addi a7, x0, 64	# Linux write.
-    ecall
+    jal prtstr
 
     # Restore stack.
     lw s1, w1(sp)		# Restore s1.
@@ -291,40 +253,32 @@ stack_print:
 
     jal stack_print_name
 
-    jal pcr
+    jal prtnl
 
     lw s2, stack_start(s1)	# Load stack start.
 
     lw s3, stack_end(s1)	# Load stack end.
 
     la a0, stack_print_num
-    jal strlen			# Get string len into a2.
-    addi a0, x0, 1		# StdOut
-    la a1, stack_print_num	# Load string addr for call.
-    addi a7, x0, 64		# Linux write.
-    ecall
+    jal prtstr
 
     sub t3, s3, s2		# Get dif in bytes.
     srli a0, t3, sbts		# Divide by word bytes.
-    jal nu2d			# Print as base 10.
+    jal prtdec			# Print as base 10.
 
-    jal pcr
+    jal prtnl
 
     la a0, stack_print_items
-    jal strlen			# Get string len into a2.
-    addi a0, x0, 1		# StdOut
-    la a1, stack_print_items	# Load string addr for call.
-    addi a7, x0, 64		# Linux write.
-    ecall
+    jal prtstr
 
     lw t1, stack_start(s1)	# Load stack start.
     lw t2, stack_tos(s1)	# Load stack tos.
 
     sub t0, t2, t1		# Get bytes difference.
     srli a0, t0, sbts		# Divide by word bytes.
-    jal nu2d			# Print number active items.
+    jal prtdec			# Print number active items.
 
-    jal pcr
+    jal prtnl
 
    # Loop to print eack active item.
     lw s3, stack_tos(s1)	# Load stack tos.
@@ -332,9 +286,9 @@ sp_loop_next:
     bgeu s2, s3, sp_loop_end	# Exit loop if at the end of the stack.
 
     lw a0, 0(s2)    		# load next item
-    jal nu2h			# Print item in hex.
+    jal prthex			# Print item in hex.
 
-    jal pcr
+    jal prtnl
 
     addi s2, s2, w1		# Point to next item.
     j sp_loop_next

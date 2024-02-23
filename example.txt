@@ -1,0 +1,72 @@
+
+Stack_Array addr: 0x12404
+Stack addr: 0x12424
+Stack Name: Links
+Max Items: 3
+Number Available Items: 3
+0x1245C
+0x12474
+0x1248C
+Array addr: 0x1245C
+
+Stack_Array addr: 0x124A4
+Stack addr: 0x124C4
+Stack Name: Element
+Max Items: 3
+Number Available Items: 3
+0x124FC
+0x12514
+0x1252C
+Array addr: 0x124FC
+
+List: ([Name: Hydrogen, AN: 1], [Name: Helium, AN: 2])
+
+Len: 2 Empty: 0
+
+Stack_Array addr: 0x12404
+Stack addr: 0x12424
+Stack Name: Links
+Max Items: 3
+Number Available Items: 1
+0x1245C
+Array addr: 0x1245C
+
+Stack_Array addr: 0x124A4
+Stack addr: 0x124C4
+Stack Name: Element
+Max Items: 3
+Number Available Items: 1
+0x124FC
+Array addr: 0x124FC
+
+popped: [Name: Hydrogen, AN: 1]
+
+leaving ([Name: Helium, AN: 2])
+
+Len: 1 Empty: 0
+
+popped: [Name: Helium, AN: 2]
+
+leaving ()
+
+Len: 0 Empty: 1
+
+Stack_Array addr: 0x12404
+Stack addr: 0x12424
+Stack Name: Links
+Max Items: 3
+Number Available Items: 3
+0x1245C
+0x12474
+0x1248C
+Array addr: 0x1245C
+
+Stack_Array addr: 0x124A4
+Stack addr: 0x124C4
+Stack Name: Element
+Max Items: 3
+Number Available Items: 3
+0x124FC
+0x12514
+0x1252C
+Array addr: 0x124FC
