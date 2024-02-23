@@ -164,6 +164,21 @@ ret:
 
     ret			# Return a1
 
+# Display invalid request, then halt.
+invalid_num_items:
+    la a0, invalid_num_items_str
+    jal prtstr
+
+    addi a0, x0, 8	# Load return code.
+    jal endprg
+
+# Display invalid request, then halt.
+invalid_num_words:
+    la a0, invalid_num_words_str
+    jal prtstr
+
+    addi a0, x0, 9	# Load return code.
+    jal endprg
 
 # Print a stack_array.
 # In:  a0 - stack_array ptr.
@@ -212,22 +227,6 @@ stack_array_print:
     addi sp, sp, w2	# Restare sp.
 
     ret
-
-# Display invalid request, then halt.
-invalid_num_items:
-    la a0, invalid_num_items_str
-    jal prtstr
-
-    addi a0, x0, 8	# Load return code.
-    jal endprg
-
-# Display invalid request, then halt.
-invalid_num_words:
-    la a0, invalid_num_words_str
-    jal prtstr
-
-    addi a0, x0, 9	# Load return code.
-    jal endprg
 
 # Get an address of an array item from the stack.
 # In:  a0 - stack_array ptr.
