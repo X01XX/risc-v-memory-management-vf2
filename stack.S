@@ -25,6 +25,14 @@
 	.equ	stack_desc,	w3	# Ptr to a non-empty string, with printable characters.
 	.equ    stack_words,	4	# Number words in this struct.
 
+# Global labels.
+	.global stack_new
+	.global stack_push
+	.global stack_pop
+	.global stack_print
+	.global stack_print_name
+	.global stack_contains
+	
 # External labels.
 	.extern endprg			# End program.
 	.extern strlen			# Load string len into a2.
@@ -35,21 +43,12 @@
 
 	.extern mem_alloc		# Get memory from allocate-only memory store.
 
-# Global labels.
-	.global stack_new
-	.global stack_push
-	.global stack_pop
-	.global stack_print
-	.global stack_print_name
-	.global stack_contains
-
 # Initialize and return a stack.
 # mem_init needs to be called from main before calling this.
 #
 # In:  a0, contains the number of words the stack will need to support.
 #      a1, contains a ptr to a string that will name the stack for error messages.
 # Ret: a1, a ptr to the memory allocated for the stack (header).
-# Out: Invalid number of words message.
 stack_new:
     blez a0, invalid_request 	# Check for zero, or negative, number of words.
 
@@ -110,7 +109,6 @@ invalid_request:
 # In:  a0, ptr to a stack.
 #      a1, value to push.
 # Ret: Nothing.
-# Out: Stack full error message.
 stack_push:
     lw t0, stack_tos(a0)	# Load stack tos.
 
@@ -141,8 +139,7 @@ stack_full:
 
 # Pop a value from the a stack.
 # In:  a0, ptr to a stack.
-# Ret: a1, value on stack, or
-# Out: Stack empty error message.
+# Ret: a1, value on stack.
 stack_pop:
     lw t0, stack_tos(a0)	# Load stack tos.
 
@@ -171,10 +168,9 @@ stack_empty:
     addi a0, x0, 5	# Load return code
     jal endprg
  
-# Check a stack name string.
+# Check a stack name string, ended with 0, for length and unprintable characters.
 # In:  a0 = pointer to string.
 # Ret: Nothing.
-# Out: Empty string error, invald character error.
 # Note: Any length GT 0 is OK.
 #       No check for a duplicate name with another stack.
 check_name:
@@ -214,7 +210,10 @@ name_invalid_char:
     addi a0, x0, 7	# Load return code
     jal endprg
 
-# Print the stack name.
+# Print the stack name, to StdOut.
+# In:  a0 - Ptr to stack.
+# Ret: Nothing.
+# Out: Text printed.
 stack_print_name:
    # Configure stack
     addi sp, sp, w2n	# Advance stack pointer.
@@ -255,12 +254,12 @@ stack_print:
 
     jal prtnl
 
+    la a0, stack_print_num
+    jal prtstr
+
     lw s2, stack_start(s1)	# Load stack start.
 
     lw s3, stack_end(s1)	# Load stack end.
-
-    la a0, stack_print_num
-    jal prtstr
 
     sub t3, s3, s2		# Get dif in bytes.
     srli a0, t3, sbts		# Divide by word bytes.
@@ -302,11 +301,10 @@ sp_loop_end:
     addi sp, sp, w4		# Restore sp.
     ret
 
-# Check a stack for an address, halt if found.
+# Check a stack for a value.
 # In:  a0, ptr to a stack struct.
 #      a1, item to check for.
 # Ret: a1 = 1 if true, 0 if false.
-# Out: Error text printed, before halt.
 stack_contains:
     lw t1, stack_start(a0)	# Load stack start.
 
@@ -333,7 +331,7 @@ sca_true:
     ret
 
 cn_err1_str:		.asciz "Empty string for stack name?"
-invalid_str:    	.asciz "stack_init: Invalid number of words "
+invalid_str:    	.asciz "Invalid number of words "
 cn_err2_str: 		.asciz "Invalid character in stack name?\n"
 stack_print_prefix:	.asciz	"\nStack Name: "
 stack_print_num:	.asciz  "Max Items: "

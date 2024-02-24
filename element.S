@@ -21,6 +21,15 @@
         .equ element_atomic_number,  w2
         .equ element_words,  3
 
+#  Global labels:
+	.global element_init
+	.global element_new
+	.global element_dealloc
+	.global element_list_dealloc
+	.global element_stack_print
+	.global element_print
+	.global element_list_print
+	
 # External labels:
 	.extern endprg
 	.extern prtchr
@@ -42,23 +51,14 @@
 	.extern get_link_next
 	.extern link_list_dealloc
 
-# Global labels:
-	.global element_init
-	.global element_new
-	.global element_dealloc
-	.global element_list_dealloc
-	.global element_stack_print
-	.global element_print
-	.global element_list_print
-
-# ID to help identify a element instance.
-# A strange prime number is used for less probability of matching a random value.
+# ID to identify a element instance.
 	.equ element_id_val, 1153
 
 # Initialize element storage.
 # mem_init needs to be called from main before calling this.
 #
-# In: a0 contains the number of items to allow for.
+# In:  a0 contains the number of items to allow for.
+# Ret: Nothing.
 element_init:
     # Configure stack.
     addi sp, sp, w1n		# Advance sp for stack frame.
@@ -81,7 +81,7 @@ element_init:
 # Return a new element.
 # In:  a0 = Ptr to name string.
 #      a1 = Atomic number.
-# Ret: a1 = Link instance ptr.
+# Ret: a1 = Element instance ptr.
 element_new:
     # Configure stack.
     addi sp, sp, w3n		# Advance sp for stack frame.
@@ -113,7 +113,7 @@ element_new:
     ret
 
 # Deallocate a element.
-# In: a0 contains a pointer to a element instance.
+# In: a0 is a pointer to an element instance.
 # Ret: Nothing.
 element_dealloc:
     # Configure stack.
@@ -204,7 +204,7 @@ element_stack_print:
 # Ret: Nothing.
 # Out: Prints info.
 element_print:
-    # Cotfigure stack.
+    # Configure stack.
     addi sp, sp, w2n		# Advance sp for stack frame.
     sw ra, 0(sp)                # Save ra.
     sw s1, w1(sp)		# Save s1.
@@ -303,7 +303,7 @@ epl_loop_end:
     ret
 
 # Deallocate a element list.
-# In: a0 = list ptr.
+# In: a0 = link instance ptr.
 element_list_dealloc:
     # Configure stack.
     addi sp, sp, w4n		# Advance sp for stack frame.

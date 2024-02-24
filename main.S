@@ -38,13 +38,17 @@ _start:
     jal link_init
 
     # Init element struct alloc/dealloc stack-array memory.
-    li a0, 3		# Load maximum number of items in use at any one time. 
+    li a0, 3		# Load maximum number of items in use at any one time.
     jal element_init
-
+ 
 after_init:
     jal link_stack_print
 
     jal element_stack_print
+
+    # Print memory usage.
+    jal prtnl
+    jal mem_left
 
     # Init new list, save to s1.
     jal list_new

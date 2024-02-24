@@ -21,6 +21,20 @@
         .equ link_val,  w2
         .equ link_words,  3
 
+#  Global labels:
+	.global link_init
+	.global link_stack_print
+	.global link_print
+	.global is_link
+	.global get_link_val
+	.global get_link_next
+	.global link_list_dealloc
+	.global list_new
+	.global list_push
+	.global list_pop
+	.global list_len
+	.global list_is_empty
+
 # External labels:
 	.extern endprg		# End program.
 	.extern prtnl		# Print newline.
@@ -35,22 +49,7 @@
         .extern stack_array_dealloc
         .extern stack_array_print
 
-# Global labels:
-	.global link_init
-	.global link_stack_print
-	.global link_print
-	.global is_link
-	.global get_link_val
-	.global get_link_next
-	.global link_list_dealloc
-	.global list_new
-	.global list_push
-	.global list_pop
-	.global list_len
-	.global list_is_empty
-
-# ID to help identify a link instance.
-# A strange prime number is used for less probability of matching a random value.
+# ID to identify a link instance.
 	.equ link_id_val, 1319
 
 # Initialize link storage.
@@ -71,7 +70,6 @@ link_init:
     la t0, link_sa_ptr
     sw a1, 0(t0)
 
-
     # Cleanup stack.
     lw ra, 0(sp)	# Restore ra.
     addi sp, sp, w1     # Restore sp.
@@ -81,7 +79,7 @@ link_init:
 # Return a new link.
 # In:  a0 = Link value.
 #      a1 = Link next.
-# Ret: Link instance ptr in a1.
+# Ret: a1 = Link instance ptr.
 link_new:
     # Configure stack.
     addi sp, sp, w3n
@@ -134,7 +132,6 @@ list_new:
 #
 # In:  a0 = List (link) ptr.
 # Ret: a1 = Value ptr.
-# Out: a0 not a link error. Empty list error.
 list_pop:
     # Configure stack.
     addi sp, sp, w4n		# Advance sp for stack frame.
@@ -203,7 +200,7 @@ lpo_err:
 # Push a value onto a list of structs, sharing the same ID value.
 # In:  a0 = a link ptr.
 #      a1 = value ptr. a1 = struct value, with ID in first word.
-# Out: a0 not a link error.  Value ID not equal first value in list error.
+# Ret: Nothing.
 list_push:
     # Configure stack.
     addi sp, sp, w3n		# Advance sp for stack frame.
@@ -400,7 +397,8 @@ link_print:
     ret
 
 # Deallocate a linked list.
-# In: a0 = ptr to a link.
+# Clear values from the list before calling this.
+# In: a0 = ptr to a link instance.
 link_list_dealloc:
     # Configure stack.
     addi sp, sp, w3n		# Advance sp for stack frame.
@@ -484,9 +482,6 @@ ll_end:
 # In:  a0 = ptr to a link instance.
 # Ret: a1 = 1 or 0.
 list_is_empty:
-    # Configure stack.
-    addi sp, sp, w1n		# Advance sp for stack frame.
-    sw ra, 0(sp)                # Save ra.
 
     # Check instance ID.
     lw t0, link_id(a0)       	# Load instance ID.
@@ -512,9 +507,6 @@ list_is_empty:
     jal endprg
 
 lie_end:
-    # Restore stack.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w1             # Restore sp.
 
     ret
 

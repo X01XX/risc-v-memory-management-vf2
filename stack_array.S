@@ -22,6 +22,7 @@
 	.equ w6, 48
 	.equ w7, 56
 	.equ w8, 64
+
 	.equ w1n, -8
 	.equ w2n, -16
 	.equ w3n, -24
@@ -64,7 +65,7 @@
 # In:  a0 - Number of items.
 #      a1 - Number of words in each item.
 #      a2 - Pointer to string description.
-# Ret: a1 - Stack pointer.
+# Ret: a1 - Stack-array instance pointer.
 #      The stack is loaded with the ptr to each array item.
 #      The array ptr is not needed by the caller, it is only used in this function.
 stack_array_new:
@@ -107,17 +108,8 @@ stack_array_new:
 	
     # Allocate array.
 
-    # Calc array words.  Use additions to stay withn RV32I, RV64I, .. ?
-    mv	t0, s1		# Load number of items.
-    mv	t1, s2		# Load number of words in each item.
-#   mul a0, s1, s2	# Get number of words of array memory needed.
-    li a0, 0		# Init counter.
-top_mult:
-    beqz t0, end_mult	# Check for end.
-    add a0, a0, t1	# Add the number of words in one item.
-    addi t0, t0, -1	# Decrement counter.
-    jal top_mult	# Jump to add next item number words.
-end_mult:
+    # Calc array words.
+    mul a0, s1, s2	# Get number of words of array memory needed.
     jal mem_alloc	# a0 contains number words needed.  Get memory allocation for array into a1.
 
     # Save array ptr to struct.
@@ -229,7 +221,7 @@ stack_array_print:
     ret
 
 # Get an address of an array item from the stack.
-# In:  a0 - stack_array ptr.
+# In:  a0 - stack_array instance ptr.
 # Ret: a1 - item pointer.
 stack_array_alloc:
     # Configure stack.
@@ -249,7 +241,7 @@ stack_array_alloc:
     ret
 
 # Return an address of an array item to the stack.
-# In:  a0 - stack_array ptr.
+# In:  a0 - stack_array instance ptr.
 #      a1 - addr to deallocate.
 #      Item will be zeroed out.
 # Ret: Nothinig.

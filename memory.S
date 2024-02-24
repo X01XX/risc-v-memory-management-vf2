@@ -11,6 +11,8 @@
 
 # Word sizes. Change if a word is not 32 bits, 4 bytes.
 	.equ w1, 8
+	
+	.equ w1n, -8
 
 	# Shift number bits to convert between words and bytes.
 	# Change if a word is not 32 bits, 4 bytes.
@@ -24,12 +26,6 @@
 # External labels.
 	.extern endprg		# End program.
 	.extern prtdec		# Print a number in base 10.
-	.extern strlen		#delete later 
-	
-# Word sizes. # Change if a word is not 32 bits, 4 bytes.
-	.equ w1, 8
-
-        .equ w1n, -8
         
 # Initialize the memory store.
 # Call from main before using mem_alloc.
@@ -43,9 +39,7 @@ mem_init:
 
 # Allocate a block of memory.
 # In:  a0 = number words needed.
-# Out: a1 = Address of memory block, or
-#      Invalid request error.
-#      Out of memory error.
+# Ret: a1 = Address of memory block.
 mem_alloc:
     blez a0, invalid_request	# Check for zero, or negative, memory request.
 
@@ -65,10 +59,10 @@ mem_alloc:
 # Display invalid memory request, then halt.
 invalid_request:
 
-    la a0, invalid_str		# Load addr of string.
+    la a0, invalid_str	# Load addr of string.
     jal prtstr
     
-    addi	a0, x0, 1	# Load return code
+    addi a0, x0, 1	# Load return code
     jal endprg
     
 # Display out of memory error, then halt.
@@ -79,7 +73,7 @@ out_of_memory:
     add	a0, x0, 2	# Load return code
     jal endprg
 
-# Print the amount of memory that is left.
+# Print the amount of memory that is left, to StdOut.
 # In:  Nothing.
 # Out: A message is displayed.
 mem_left:
@@ -119,11 +113,10 @@ mem_left:
 
     ret
 
-invalid_str:	.asciz "mem_alloc: Invalid memory request\n"
+invalid_str:	.asciz "Invalid memory request\n"
 out_str:	.asciz "Out of memory\n"
 mem_left_str1:	.asciz	" Words of "
 mem_left_str2:	.asciz	" allocate-only memory left.\n"
-cr: .asciz "\n"
 
 .data
 
