@@ -371,7 +371,7 @@ link_print:
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
-    la a0, left_bracket		# Load addr of prefix string.
+    la a0, '['			# Load addr of prefix string.
     jal prtchr
 
     la a0, lp_val_str	# Load addr of prefix string.
@@ -386,7 +386,7 @@ link_print:
     lw a0, link_next(s1)
     jal prthex
 
-    la a0, right_bracket	# Load addr of prefix string.
+    la a0, ']'		# Load addr of prefix string.
     jal prtchr
 
     # Restore stack.
@@ -517,8 +517,6 @@ lid_err_str:    .asciz  "Invalid instance link id"
 link_str:       .asciz  "Links"
 lp_val_str:	.asciz "Value: "
 lp_nxt_str:	.asciz ", Next: "
-left_bracket:	.asciz "["
-right_bracket:	.asciz "]"
 
 .data 
 

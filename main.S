@@ -2,9 +2,6 @@
 .text
 	.global _start
 
-	# Word sizes. # Change if a word is not 32 bits, 4 bytes.
-	.equ w1, 4
-
 # External labels:
 	.extern endprg			# End program.
 	.extern prtstr			# Print a string.

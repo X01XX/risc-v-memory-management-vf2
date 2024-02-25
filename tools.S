@@ -22,7 +22,7 @@
         .equ w4n, -32
         .equ w5n, -40
 
-# Print a unsigned number to StdOut, in base 10.
+# Print a signed number to StdOut, in base 10.
 # In:  a0 - A number.
 # Ret: Nothing.
 # Out: A decimal number.
@@ -35,38 +35,49 @@ prtdec:
     sw s3, w3(sp)		# Save s3.
     sw s4, w4(sp)		# Save s4.
 
-    # Find largest divisor, a power of 10, le the passed number.
+    mv s3, a0			# Copy a0 into register, to work with.
+
+    # Check if negative
+    bge s3, x0, prtdec_pos
+    
+    # Print a negative sign.
+    li a0, '-'
+    jal prtchr
+
+    # Get absolute value.
+    xori s3, s3, -1
+    addi s3, s3, 1
+
+prtdec_pos:
+
+    # Find largest divisor, a power of 10, le the passed number, or 1.
     li s1, 10			# Set base.
     li s2, 1			# Init divisor.
+    beqz s3, prtdec_end_loop	# Check for zero.
+ 
 prtdec_loop:
     mul t0, s2, s1		# Get next larger divisor.
     beqz t0, prtdec_end_loop	# Check for overflow.
-    bgt t0, a0, prtdec_end_loop	# Check for next divisor GT a0.
+    bgtu t0, s3, prtdec_end_loop	# Check for next divisor GT passed number.
 
-    mv s2, t0			# Set divisor to next.
+    mv s2, t0		# Set new divisor.
 
     j prtdec_loop
 prtdec_end_loop:		# Largest divisor less than a0 in s2.
 
     # Print each digit, until the divisor is zero.
-    mv s3, a0			# Copy a0 into register, to work with.
 prtdec_loop2:
-    beqz s2, prtdec_end_loop2	# End loop.
-    
     divu s4, s3, s2		# Divide passed number by divisor.
-    addi t1, s4, '0'		# Get character to print.
-    
-    la a0, char			# Load addr of string
-    sb t1, 0(a0)		# Store character.
+    addi a0, s4, '0'		# Get character to print.
     jal prtchr
     
     mul t0, s4, s2		# Get value to subtract from number.
     sub s3, s3, t0		# Get rmainder for next pass.
  
     divu s2, s2, s1		# Divide divisor by base.
-    j prtdec_loop2
-prtdec_end_loop2:
+    bnez s2, prtdec_loop2	# End loop.
 
+prtdec_end:
   # Restore stack.
     lw s4, w4(sp)		# Restore s4.
     lw s3, w3(sp)		# Restore s3.
@@ -96,37 +107,34 @@ prthex:
     la a0, hprefix		# Load addr of string.
     jal prtstr
     
-    # Get largest power of 16, le the passed number.
+    # Get largest power of 16, le the passed number, or 1.
     li s1, 16			# Set base.
     li s2, 1			# Init divisor.
-    
+    beqz s3, prthex_end_loop	# Check for zero.
+
 prthex_loop:
     mul t0, s2, s1		# Get next larger divisor.
     beqz t0, prthex_end_loop	# Check for overflow.
-    bgt t0, s3, prthex_end_loop	# Check for next divisor GT a0.
+    bgtu t0, s3, prthex_end_loop	# Check for next divisor GT a0.
 
-    mv s2, t0			# Set divisor to next.
+    mv s2, t0			# Set next divisor.
 
     j prthex_loop
 prthex_end_loop:		# Divisor in s2.
 
 prthex_loop2:
-    beqz s2, prthex_end_loop2	# End loop when divisor becomes zero.
-    
     divu s4, s3, s2		# Divide passed number by divisor.
     
     li t0, 10			# Load cutoff for first letter.
-    bge s4, t0, prthex_letr	# Jump to load letter value.
+    bgeu s4, t0, prthex_letr	# Jump to load letter value.
     
-    addi t1, s4, '0'		# Get digit value to print.
+    addi a0, s4, '0'		# Get digit value to print.
     j prthex_print_char
     
 prthex_letr:
-    addi t1, s4, 'A' - 10
+    addi a0, s4, 'A' - 10
 
 prthex_print_char:
-    la a0, char			# Load addr of string
-    sb t1, 0(a0)		# Store character.
     jal prtchr
 
     # Prepare for next cycle.
@@ -134,10 +142,9 @@ prthex_print_char:
     sub s3, s3, t0		# Get rmainder for next pass.
  
     divu s2, s2, s1		# Divide divisor by base.
-    j prthex_loop2
+    bnez s2, prthex_loop2	# End loop when divisor becomes zero.
 
-prthex_end_loop2:
-
+prthex_end:
     # Restore stack.
     lw s4, w4(sp)		# Restore s4.
     lw s3, w3(sp)		# Restore s3.
@@ -170,7 +177,7 @@ prtnl:
     ret
 
 # Print a character, to StdOut.
-# In:  a0 - ptr to a character.
+# In:  a0 - character value.
 # Ret: Nothing.
 # Out: A character.
 prtchr:
@@ -178,7 +185,9 @@ prtchr:
     addi sp, sp, w1n		# Advance sp for stack frame.
     sw ra, 0(sp)                # Save ra.
 
-    mv a1, a0			# Load addr of character
+    la t0, char
+    sb a0, 0(t0)
+    la a1, char			# Load addr of character
     addi a0, x0, 1		# StdOut
     addi a2, x0, 1		# String length
     addi a7, x0, 64		# linux write call

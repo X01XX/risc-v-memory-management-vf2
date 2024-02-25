@@ -216,7 +216,7 @@ element_print:
     li t1, element_id_val	# Load expected ID.
     bne t0, t1, eid_err		# Error if ne.
 
-    la a0, left_bracket
+    li a0, '['
     jal prtchr
 
     la a0, el_name_str
@@ -231,7 +231,7 @@ element_print:
     lw a0, element_atomic_number(s1)
     jal prtdec
 
-    la a0, right_bracket
+    li a0, ']'
     jal prtchr
 
     # Restore stack.
@@ -260,7 +260,7 @@ element_list_print:
     mv a0, s1			# Load link ptr
     jal is_link			# Check link id.
 
-    la a0, left_paren		# Print list prefix, left paren.
+    li a0, '('			# Print list prefix, left paren.
     jal prtchr
 
     # Check for empty list.
@@ -290,7 +290,7 @@ epl_loop_next:
 
 epl_loop_end:
     
-    la a0, right_paren		# Print list suffix, right paren.
+    la a0, ')'			# Print list suffix, right paren.
     jal prtchr
 
     # Restore stack.
@@ -367,10 +367,6 @@ element_str:       .asciz  "Element"
 el_name_str:	.asciz "Name: "
 el_an_str:	.asciz ", AN: "
 eid_err_str:	.asciz  "Invalid instance element id"
-left_bracket:	.asciz "["
-right_bracket:	.asciz "]"
-left_paren:	.asciz "("
-right_paren:	.asciz ")"
 
 .data
 
