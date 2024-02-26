@@ -6,12 +6,16 @@
 #
 # Run stack_array_dealloc, to return an address that is no longer used.
 #
-#    There are two sections of code in stack_array_dealloc that can be commented out,
-#    for greater speed, but lower detection of errors.
+#    There are two sections of code in stack_array_dealloc that can be skipped,
+#    for greater speed, but lower detection of errors.  See first equs.
 #
-#     It does not check for invalid addresses, being deallocated, but that can be done by the caller.
+#    It does not check for invalid addresses, being deallocated, but that can be done by the caller.
 #
 # See stack_array struct, below.
+
+# Comment out these, to make deallocation faster, but harder to notice and track down logical errors.
+	.equ zero_memory, 1
+	.equ check_for_dups, 1
 
 # Word sizes. Change if a word is not 32 bits, 4 bytes.
 	.equ w1, 8
@@ -255,6 +259,7 @@ stack_array_dealloc:
     mv s1, a0		# sa struct adr to s1.
     mv s2, a1		# sa item adr to s2.
 
+.ifdef check_for_dups
     # Check address is not already in the stack.
     # This section can be commented out for greater speed.
     lw a0, sa_stack_ptr(s1)
@@ -262,21 +267,21 @@ stack_array_dealloc:
     jal stack_contains
     li t0, 1
     beq a1, t0, sad_err
+.endif
 
+.ifdef zero_memory
     # Zero out item memory.
     # This section can be commented out for greater speed.
     lw t0, sa_item_words(s1)	# Load words in item.
     mv t2, s2			# Item ptr to t2.
-sad_top_loop:
-    beqz t0, sad_end_loop
-
+sad_loop:
     sw x0, 0(t2)		# Zero out a word
 
-    addi t0, t0, -1		# Decrement the item word counter.
     addi t2, t2, w1		# Increment the item word pointer.
+    addi t0, t0, -1		# Decrement the item word counter.
 
-    j sad_top_loop
-sad_end_loop:
+    bnez t0, sad_loop
+.endif
 
     # Return item to stack.
     lw a0, sa_stack_ptr(s1)

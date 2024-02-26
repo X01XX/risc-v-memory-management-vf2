@@ -19,13 +19,15 @@ Function to file:
 
 Allocate-only memory: memory.a
 
-   You set the maximum available memory.
+   You set the maximum available memory, see the first equ in the file.
 
 Allocate-deallocate memory: stack.a, stack_array.a
 
    You set the maximum number of items in the array, and the item size, separately, for each instance.
 
    An instance supports one kind of struct, so multiple instances for multiple structs.
+
+   Deallocation can be made faster by commenting out the first one, or two, equs in the file.
 
 Linked list struct, memory, methods: link.a
 

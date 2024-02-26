@@ -17,9 +17,9 @@
 
 # Struct element:
         .equ element_id, 	0
-        .equ element_name, w1
+        .equ element_name,	w1
         .equ element_atomic_number,  w2
-        .equ element_words,  3
+        .equ element_words,	3
 
 #  Global labels:
 	.global element_init
@@ -47,8 +47,8 @@
 	.extern is_link
 	.extern link_val
 	.extern link_print
-	.extern get_link_val
-	.extern get_link_next
+	.extern link_get_val
+	.extern link_get_next
 	.extern link_list_dealloc
 
 # ID to identify a element instance.
@@ -156,7 +156,7 @@ is_element:
 # Accessor to get element name.
 # In:  a0 = ptr to element instance.
 # Ret: a1 = element name.
-get_element_name:
+element_get_name:
     # Check instance ID.
     lw t0, element_id(a0)       # Load instance ID.
     li t1, element_id_val       # Load expected ID.
@@ -169,7 +169,7 @@ get_element_name:
 # Accessor to get element atomic_number.
 # In:  a0 = ptr to element instance.
 # Ret: a1 = element atomic_number.
-get_element_atomic_number:
+element_get_atomic_number:
     # Check instance ID.
     lw t0, element_id(a0)       # Load instance ID.
     li t1, element_id_val       # Load expected ID.
@@ -265,19 +265,19 @@ element_list_print:
 
     # Check for empty list.
     mv a0, s1			# Get link value.
-    jal get_link_val
+    jal link_get_val
     beq a1, x0, epl_loop_end
 
 epl_loop_next:
     mv a0, s1			# Load link value, to a1.
-    jal get_link_val
+    jal link_get_val
     mv s3, a1
 
     mv a0, s3			# Print it.
     jal element_print
 
     mv a0, s1			# Load link next.
-    jal get_link_next
+    jal link_get_next
 
     beq a1, x0, epl_loop_end
 
@@ -306,15 +306,14 @@ epl_loop_end:
 # In: a0 = link instance ptr.
 element_list_dealloc:
     # Configure stack.
-    addi sp, sp, w4n		# Advance sp for stack frame.
+    addi sp, sp, w3n		# Advance sp for stack frame.
     sw ra, 0(sp)                # Save ra.
     sw s1, w1(sp)		# Save s1.
     sw s2, w2(sp)		# Save s2.
-    sw s3, w3(sp)		# Save s3.
 
    # Save arg.
     mv s1, a0                   # Save link ptr.
-    mv s3, a0                   # Save link ptr.
+    mv s2, a0                   # Save link ptr.
 
     # Check instance ID.
     mv a0, s1			# Get link value.
@@ -322,12 +321,12 @@ element_list_dealloc:
 
     # Check for empty list.
     mv a0, s1			# Get link value.
-    jal get_link_val
+    jal link_get_val
     beq a1, x0, edl_loop_end
 
 edl_loop_next:
     mv a0, s1
-    jal get_link_val		# Get element ptr in a1.
+    jal link_get_val		# Get element ptr in a1.
 
     # Check element ID.
     lw t0, element_id(a1)
@@ -340,7 +339,7 @@ edl_loop_next:
 
     # Point to the next link.
     mv a0, s1
-    jal get_link_next
+    jal link_get_next
     mv s1, a1
 
     beq s1, x0, edl_loop_end
@@ -349,15 +348,14 @@ edl_loop_next:
 
 edl_loop_end:
     # Deallocate the links in the list.
-    mv a0, s3
+    mv a0, s2
     jal link_list_dealloc
 
     # Restore stack.
-    lw s3, w3(sp)		# Restore s3.
     lw s2, w2(sp)		# Restore s2.
     lw s1, w1(sp)		# Restore s1.
     lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w4             # Restore sp.
+    addi sp, sp, w3             # Restore sp.
 
     ret
 

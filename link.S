@@ -26,8 +26,8 @@
 	.global link_stack_print
 	.global link_print
 	.global is_link
-	.global get_link_val
-	.global get_link_next
+	.global link_get_val
+	.global link_get_next
 	.global link_list_dealloc
 	.global list_new
 	.global list_push
@@ -311,7 +311,7 @@ is_link:
 # Accessor to get link value.
 # In:  a0 = ptr to link instance.
 # Ret: a1 = link value.
-get_link_val:
+link_get_val:
     # Check instance ID.
     lw t0, link_id(a0)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
@@ -324,7 +324,7 @@ get_link_val:
 # Accessor to get link next.
 # In:  a0 = ptr to link instance.
 # Ret: a1 = link next.
-get_link_next:
+link_get_next:
     # Check instance ID.
     lw t0, link_id(a0)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
@@ -371,7 +371,7 @@ link_print:
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
-    la a0, '['			# Load addr of prefix string.
+    li a0, '['			# Load left bracket value.
     jal prtchr
 
     la a0, lp_val_str	# Load addr of prefix string.
@@ -386,7 +386,7 @@ link_print:
     lw a0, link_next(s1)
     jal prthex
 
-    la a0, ']'		# Load addr of prefix string.
+    li a0, ']'		# Load right bracket value.
     jal prtchr
 
     # Restore stack.
