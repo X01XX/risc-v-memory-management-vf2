@@ -36,11 +36,11 @@
 	.equ wbyts, 2
 
 # Struct stack_array (sa):
-	.equ	sa_stack_ptr, 0		# Ptr to stack struct.
-	.equ 	sa_array_ptr, d1	# Ptr to array.
-	.equ	sa_num_items, d2	# Max number items, 1 word.
-	.equ	sa_item_words, 20	# Number words per item, 1 word.
-	.equ	sa_words, 6		# Number words in this struct.
+	.equ	sa_stack_ptr,   0	# 8 bytes, 2 words. Ptr to stack struct.
+	.equ 	sa_array_ptr,   8	# 8 bytes, 2 words. Ptr to array.
+	.equ	sa_num_items,  16	# 2 bytes, 1/2 word. Max number items.
+	.equ	sa_item_words, 18	# 2 bytes, 1/2 word. Number words per item.
+	.equ	sa_words, 5		# Number words in this struct.
 
 # Global labels:
 	.global stack_array_new
@@ -96,10 +96,10 @@ stack_array_new:
     mv s7, a1		# Save sa struct ptr.
 
     # Add number items to struct.
-    sw s1, sa_num_items(s7)
+    sh s1, sa_num_items(s7)
 
     # Add words per item, to struct.
-    sw s2, sa_item_words(s7)
+    sh s2, sa_item_words(s7)
 
     # Allocate new stack.
     mv	a0, s1		# Load number of items.
@@ -256,12 +256,6 @@ stack_array_dealloc:
     mv s1, a0		# sa struct adr to s1.
     mv s2, a1		# sa item adr to s2.
 
-	.equ	sa_stack_ptr, 0		# Ptr to stack struct.
-	.equ 	sa_array_ptr, d1	# Ptr to array.
-	.equ	sa_num_items, d2	# Max number items, 1 word.
-	.equ	sa_item_words, 20	# Number words per item, 1 word.
-
-    
 .ifdef check_for_dups
     # Check address is not already in the stack.
     # This section can be commented out for greater speed.
@@ -275,7 +269,7 @@ stack_array_dealloc:
 .ifdef zero_memory
     # Zero out item memory.
     # This section can be commented out for greater speed.
-    lw t0, sa_item_words(s1)	# Load words in item.
+    lh t0, sa_item_words(s1)	# Load words in item.
     mv t2, s2			# Item ptr to t2.
 sad_loop:
     sw x0, 0(t2)		# Zero out a word

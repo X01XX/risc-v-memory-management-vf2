@@ -19,10 +19,10 @@
 	.equ dbyts, 3
 
 # Struct stack.
-	.equ	stack_start,	0	# Ptr to start of stack.
-	.equ	stack_end,	d1	# stack_start + (wbyts * number items)
-	.equ	stack_tos,	d2	# Current Top Of Stack.
-	.equ	stack_desc,	d3	# Ptr to a non-empty string, with printable characters.
+	.equ	stack_start,	0	# 8 bytes, 2 words. Ptr to start of stack.
+	.equ	stack_end,	8	# 8 bytes, 2 words. stack_start + (wbyts * number items)
+	.equ	stack_tos,	16	# 8 bytes, 2 words. Current Top Of Stack.
+	.equ	stack_desc,	24	# 8 bytes, 2 words. Ptr to stack name string.
 	.equ    stack_words,	8	# Number words in this struct.
 
 # Global labels:

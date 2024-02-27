@@ -16,10 +16,10 @@
         .equ d4n, -32
 
 # Struct link:
-        .equ link_id, 	0
-        .equ link_next, d1
-        .equ link_val,  d2
-        .equ link_words,  6
+        .equ link_id,	 0	# 4 bytes, 1 word. Link pstruct ID number.
+        .equ link_next,  4	# 8 bytes, 2 words. Tpr to next link, or zero.
+        .equ link_val,  12	# 8 bytes, 2 words. Ptr to value, or zero in empty list.
+        .equ link_words, 5
 
 #  Global labels:
 	.global link_init
@@ -98,7 +98,7 @@ link_new:
 
     # Load values to instance.
     li t0, link_id_val		# Load the link id value.
-    sd t0, link_id(a1)		# Set link ID in returned instance.
+    sw t0, link_id(a1)		# Set link ID in returned instance.
     sd s1, link_val(a1)		# Store link value prt.
     sd s2, link_next(a1)	# Store link next prt.
 
@@ -144,7 +144,7 @@ list_pop:
     mv s1, a0			# Save link ptr.
 
     # Check instance ID.
-    ld t0, link_id(s1)       	# Load instance ID.
+    lw t0, link_id(s1)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
@@ -213,7 +213,7 @@ list_push:
     mv s2, a1			# Save value ptr.
 
     # Check instance ID.
-    ld t0, link_id(s1)       	# Load instance ID.
+    lw t0, link_id(s1)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
@@ -226,9 +226,9 @@ list_push:
 
     # Check value ids is equal to other IDs in the list.
     ld t0, link_val(s1)		# Get first link value.
-    ld t0, 0(t0)		# Get value ID.
+    lw t0, 0(t0)		# Get value ID.
 
-    ld t1, 0(s2)		# Get value-to-push ID.
+    lw t1, 0(s2)		# Get value-to-push ID.
     bne t0, t1, lp_id_err	# Jump to error code.
 
     # Get new link, a1
@@ -276,7 +276,7 @@ link_dealloc:
     sd ra, 0(sp)                # Save ra.
 
     # Check instance ID.
-    ld t0, link_id(a0)		# Load instance ID.
+    lw t0, link_id(a0)		# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err		# Error if ne.
 
@@ -302,7 +302,7 @@ lid_err:
 # Verify a ptr references a link instance, or halt.
 # In: a0 = Ptr to instance.
 is_link:
-    ld t0, link_id(a0)	# Load instance ID val.
+    lw t0, link_id(a0)	# Load instance ID val.
     li t1, link_id_val	# Load expected ID val.
 
     bne t0, t1, lid_err
@@ -313,7 +313,7 @@ is_link:
 # Ret: a1 = link value.
 link_get_val:
     # Check instance ID.
-    ld t0, link_id(a0)       	# Load instance ID.
+    lw t0, link_id(a0)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
@@ -326,7 +326,7 @@ link_get_val:
 # Ret: a1 = link next.
 link_get_next:
     # Check instance ID.
-    ld t0, link_id(a0)       	# Load instance ID.
+    lw t0, link_id(a0)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
@@ -367,7 +367,7 @@ link_print:
     mv s1, a0			# Save a0.
 
     # Check instance ID.
-    ld t0, link_id(s1)       	# Load instance ID.
+    lw t0, link_id(s1)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
@@ -410,7 +410,7 @@ link_list_dealloc:
     mv s1, a0			# Save link ptr.
 
     # Check instance ID.
-    ld t0, link_id(s1)       	# Load instance ID.
+    lw t0, link_id(s1)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
@@ -446,7 +446,7 @@ list_len:
     sd s1, d1(sp)		# Save s1.
 
     # Check instance ID.
-    ld t0, link_id(a0)       	# Load instance ID.
+    lw t0, link_id(a0)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
@@ -484,7 +484,7 @@ ll_end:
 list_is_empty:
 
     # Check instance ID.
-    ld t0, link_id(a0)       	# Load instance ID.
+    lw t0, link_id(a0)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 

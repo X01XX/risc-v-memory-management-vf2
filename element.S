@@ -16,10 +16,10 @@
         .equ d4n, -32
 
 # Struct element:
-        .equ element_id, 	0
-        .equ element_name,	d1
-        .equ element_atomic_number,  d2
-        .equ element_words,	6
+        .equ element_id, 	0	# 4 bytes, 1 word. Element struct ID value.
+        .equ element_name,	4	# 8 bytes, 2 words. Ptr to element name string. 
+        .equ element_atomic_number, 12	# 4 bytes, 1 words. Atomic number.
+        .equ element_words,	4
 
 #  Global labels:
 	.global element_init
@@ -100,9 +100,9 @@ element_new:
 
     # Load values into element instance.
     li t0, element_id_val	# Load the element id value.
-    sd t0, element_id(a1)	# Set element ID.
+    sw t0, element_id(a1)	# Set element ID.
     sd s1, element_name(a1)	# Store element name ptr.
-    sd s2, element_atomic_number(a1)	# Store atomic number.
+    sw s2, element_atomic_number(a1)	# Store atomic number.
 
     # Restore stack.
     ld s2, d2(sp)		# Restore s2.
@@ -121,7 +121,7 @@ element_dealloc:
     sd ra, 0(sp)                # Save ra.
 
     # Check instance ID.
-    ld t0, element_id(a0)	# Load instance ID.
+    lw t0, element_id(a0)	# Load instance ID.
     li t1, element_id_val	# Load expected ID.
     bne t0, t1, eid_err		# Error if ne.
 
@@ -147,7 +147,7 @@ eid_err:
 # Verify a ptr references a element instance, or halt.
 # In: a0 = Ptr to instance.
 is_element:
-    ld t0, element_id(a0)  # Load instance ID val.
+    lw t0, element_id(a0)  # Load instance ID val.
     li t1, element_id_val  # Load expected ID val.
 
     bne t0, t1, eid_err
@@ -158,7 +158,7 @@ is_element:
 # Ret: a1 = element name.
 element_get_name:
     # Check instance ID.
-    ld t0, element_id(a0)       # Load instance ID.
+    lw t0, element_id(a0)       # Load instance ID.
     li t1, element_id_val       # Load expected ID.
     bne t0, t1, eid_err		# Error if ne.
 
@@ -171,11 +171,11 @@ element_get_name:
 # Ret: a1 = element atomic_number.
 element_get_atomic_number:
     # Check instance ID.
-    ld t0, element_id(a0)       # Load instance ID.
+    lw t0, element_id(a0)       # Load instance ID.
     li t1, element_id_val       # Load expected ID.
     bne t0, t1, eid_err		# Error if ne.
 
-    ld a1, element_atomic_number(a0)     # Load element next to return.
+    lw a1, element_atomic_number(a0)     # Load element next to return.
 
     ret
 
@@ -212,7 +212,7 @@ element_print:
     mv s1, a0			# Save a0.
 
     # Check instance ID.
-    ld t0, element_id(a0)	# Load instance ID.
+    lw t0, element_id(a0)	# Load instance ID.
     li t1, element_id_val	# Load expected ID.
     bne t0, t1, eid_err		# Error if ne.
 
@@ -228,7 +228,7 @@ element_print:
     la a0, el_an_str
     jal prtstr
 
-    ld a0, element_atomic_number(s1)
+    lw a0, element_atomic_number(s1)
     jal prtdec
 
     li a0, ']'
@@ -329,7 +329,7 @@ edl_loop_next:
     jal link_get_val		# Get element ptr in a1.
 
     # Check element ID.
-    ld t0, element_id(a1)
+    lw t0, element_id(a1)
     li t1, element_id_val
     bne t1, t0, eid_err
     
@@ -369,5 +369,5 @@ eid_err_str:	.asciz  "Invalid instance element id"
 .data
 
 # Storage for element stack_array struct ptr.
-element_sa_ptr:   .word 0
+element_sa_ptr:   .dword 0
 
