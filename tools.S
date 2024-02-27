@@ -1,6 +1,7 @@
 
 .text
 
+# Global labels:
 	.global prtdec
 	.global prthex
         .global prtnl
@@ -9,18 +10,18 @@
 	.global prtstr
 	.global endprg
 
-	# Word sizes. # Change if a word is not 32 bits, 4 bytes.
-	.equ w1, 8
-        .equ w2, 16
-        .equ w3, 24
-        .equ w4, 32
-        .equ w5, 40
+# Doubleword sizes:
+	.equ d1, 8
+        .equ d2, 16
+        .equ d3, 24
+        .equ d4, 32
+        .equ d5, 40
 
-        .equ w1n, -8
-        .equ w2n, -16
-        .equ w3n, -24
-        .equ w4n, -32
-        .equ w5n, -40
+        .equ d1n, -8
+        .equ d2n, -16
+        .equ d3n, -24
+        .equ d4n, -32
+        .equ d5n, -40
 
 # Print a signed number to StdOut, in base 10.
 # In:  a0 - A number.
@@ -28,12 +29,12 @@
 # Out: A decimal number.
 prtdec:
     # Configure stack.
-    addi sp, sp, w5n		# Advance sp for stack frame.
-    sw ra, 0(sp)                # Save ra.
-    sw s1, w1(sp)		# Save s1.
-    sw s2, w2(sp)		# Save s2.
-    sw s3, w3(sp)		# Save s3.
-    sw s4, w4(sp)		# Save s4.
+    addi sp, sp, d5n		# Advance sp for stack frame.
+    sd ra, 0(sp)                # Save ra.
+    sd s1, d1(sp)		# Save s1.
+    sd s2, d2(sp)		# Save s2.
+    sd s3, d3(sp)		# Save s3.
+    sd s4, d4(sp)		# Save s4.
 
     mv s3, a0			# Copy a0 into register, to work with.
 
@@ -79,12 +80,12 @@ prtdec_loop2:
 
 prtdec_end:
   # Restore stack.
-    lw s4, w4(sp)		# Restore s4.
-    lw s3, w3(sp)		# Restore s3.
-    lw s2, w2(sp)		# Restore s2.
-    lw s1, w1(sp)		# Restore s1.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w5             # Restore sp.
+    ld s4, d4(sp)		# Restore s4.
+    ld s3, d3(sp)		# Restore s3.
+    ld s2, d2(sp)		# Restore s2.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d5             # Restore sp.
 
     ret
 
@@ -94,12 +95,12 @@ prtdec_end:
 # Out: A hexidecimal number.
 prthex:
     # Configure stack.
-    addi sp, sp, w5n		# Advance sp for stack frame.
-    sw ra, 0(sp)                # Save ra.
-    sw s1, w1(sp)		# Save s1.
-    sw s2, w2(sp)		# Save s2.
-    sw s3, w3(sp)		# Save s3.
-    sw s4, w4(sp)		# Save s4.
+    addi sp, sp, d5n		# Advance sp for stack frame.
+    sd ra, 0(sp)                # Save ra.
+    sd s1, d1(sp)		# Save s1.
+    sd s2, d2(sp)		# Save s2.
+    sd s3, d3(sp)		# Save s3.
+    sd s4, d4(sp)		# Save s4.
 
     mv s3, a0			# Copy a0 into register, to save.
 
@@ -146,12 +147,12 @@ prthex_print_char:
 
 prthex_end:
     # Restore stack.
-    lw s4, w4(sp)		# Restore s4.
-    lw s3, w3(sp)		# Restore s3.
-    lw s2, w2(sp)		# Restore s2.
-    lw s1, w1(sp)		# Restore s1.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w5             # Restore sp.
+    ld s4, d4(sp)		# Restore s4.
+    ld s3, d3(sp)		# Restore s3.
+    ld s2, d2(sp)		# Restore s2.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d5             # Restore sp.
 
     ret
 
@@ -161,8 +162,8 @@ prthex_end:
 # Out: Newline to StdOut.
 prtnl:
     # Configure stack.
-    addi sp, sp, w1n		# Advance sp for stack frame.
-    sw ra, 0(sp)                # Save ra.
+    addi sp, sp, d1n		# Advance sp for stack frame.
+    sd ra, 0(sp)                # Save ra.
 
     addi a0, x0, 1		# StdOut
     la a1, nl			# Load addr of string
@@ -171,8 +172,8 @@ prtnl:
     ecall
     
   # Restore stack.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w1             # Restore sp.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d1             # Restore sp.
 
     ret
 
@@ -182,8 +183,8 @@ prtnl:
 # Out: A character.
 prtchr:
     # Configure stack.
-    addi sp, sp, w1n		# Advance sp for stack frame.
-    sw ra, 0(sp)                # Save ra.
+    addi sp, sp, d1n		# Advance sp for stack frame.
+    sd ra, 0(sp)                # Save ra.
 
     la t0, char
     sb a0, 0(t0)
@@ -194,8 +195,8 @@ prtchr:
     ecall
     
   # Restore stack.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w1             # Restore sp.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d1             # Restore sp.
 
     ret
 
@@ -205,9 +206,9 @@ prtchr:
 # Out: A string.
 prtstr:
     # Configure stack.
-    addi sp, sp, w2n	# Advance sp for stack frame.
-    sw ra, 0(sp)        # Save ra.
-    sw s1, w1(sp)	# Save s1.
+    addi sp, sp, d2n	# Advance sp for stack frame.
+    sd ra, 0(sp)        # Save ra.
+    sd s1, d1(sp)	# Save s1.
 
     mv s1, a0		# Save ptr to string.
     jal strlen		# String len to a2.
@@ -217,9 +218,9 @@ prtstr:
     ecall
 
   # Restore stack.
-    lw s1, w1(sp)	# Restore s1.
-    lw ra, 0(sp)	# Restore ra.
-    addi sp, sp, w2     # Restore sp.
+    ld s1, d1(sp)	# Restore s1.
+    ld ra, 0(sp)	# Restore ra.
+    addi sp, sp, d2     # Restore sp.
 
     ret
 

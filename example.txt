@@ -1,45 +1,45 @@
 
-Stack_Array addr: 0x12004
-Stack addr: 0x12024
+Stack_Array addr: 0x12308
+Stack addr: 0x12320
 Stack Name: Links
 Max Items: 3
 Number Available Items: 3
-0x1205C
-0x12074
-0x1208C
-Array addr: 0x1205C
+0x1234C
+0x12364
+0x1237C
+Array addr: 0x1234C
 
-Stack_Array addr: 0x120A4
-Stack addr: 0x120C4
+Stack_Array addr: 0x12394
+Stack addr: 0x123AC
 Stack Name: Element
 Max Items: 3
 Number Available Items: 3
-0x120FC
-0x12114
-0x1212C
-Array addr: 0x120FC
+0x123D8
+0x123F0
+0x12408
+Array addr: 0x123D8
 
-460 Words of 500 allocate-only memory left.
+930 Words of 1000 allocate-only memory left.
 
 List: ([Name: Hydrogen, AN: 1], [Name: Helium, AN: 2])
 
 Len: 2 Empty: 0
 
-Stack_Array addr: 0x12004
-Stack addr: 0x12024
+Stack_Array addr: 0x12308
+Stack addr: 0x12320
 Stack Name: Links
 Max Items: 3
 Number Available Items: 1
-0x1205C
-Array addr: 0x1205C
+0x1234C
+Array addr: 0x1234C
 
-Stack_Array addr: 0x120A4
-Stack addr: 0x120C4
+Stack_Array addr: 0x12394
+Stack addr: 0x123AC
 Stack Name: Element
 Max Items: 3
 Number Available Items: 1
-0x120FC
-Array addr: 0x120FC
+0x123D8
+Array addr: 0x123D8
 
 popped: [Name: Hydrogen, AN: 1]
 
@@ -53,22 +53,22 @@ leaving ()
 
 Len: 0 Empty: 1
 
-Stack_Array addr: 0x12004
-Stack addr: 0x12024
+Stack_Array addr: 0x12308
+Stack addr: 0x12320
 Stack Name: Links
 Max Items: 3
 Number Available Items: 3
-0x1205C
-0x12074
-0x1208C
-Array addr: 0x1205C
+0x1234C
+0x12364
+0x1237C
+Array addr: 0x1234C
 
-Stack_Array addr: 0x120A4
-Stack addr: 0x120C4
+Stack_Array addr: 0x12394
+Stack addr: 0x123AC
 Stack Name: Element
 Max Items: 3
 Number Available Items: 3
-0x120FC
-0x12114
-0x1212C
-Array addr: 0x120FC
+0x123D8
+0x123F0
+0x12408
+Array addr: 0x123D8

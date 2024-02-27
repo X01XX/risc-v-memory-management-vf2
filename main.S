@@ -1,6 +1,14 @@
 
 .text
+
+# Global labels:
 	.global _start
+
+	.global stack_new
+	.global stack_push
+	.global stack_pop
+	.global stack_print
+	.global stack_contains
 
 # External labels:
 	.extern endprg			# End program.
@@ -8,6 +16,7 @@
 	.extern prtdec			# Print a number in base 10.
 	
 	.extern mem_init
+	.extern mem_left
 
         .extern link_init
         .extern link_stack_print
@@ -55,9 +64,11 @@ after_init:
     la a0, he_name
     li a1, 2
     jal element_new	# New element instance to a1.
+    mv s2, a1
 
     # Push to list.
     mv a0, s1		# Load list ptr.
+    mv a1, s2
     jal list_push
 
     # Make a new element instance.
@@ -68,6 +79,7 @@ after_init:
 
     # Push to list.
     mv a0, s1		# Load list ptr.
+    mv a1, s2
     jal list_push
 
     # Print list.
@@ -211,3 +223,5 @@ leaving_str: .asciz "\n\nleaving "
 list_str: .asciz "\nList: "
 len_str: .asciz "\nLen: "
 empty_str: .asciz " Empty: "
+
+name: .ascii "A stack"

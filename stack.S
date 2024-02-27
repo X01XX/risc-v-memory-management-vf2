@@ -4,28 +4,28 @@
 
 .text
 
-# Word sizes. Change if a word is not 32 bits, 4 bytes.
-	.equ w1, 8
-	.equ w2, 16
-	.equ w3, 24
-	.equ w4, 32
+# Doubleword sizes:
+	.equ d1, 8
+	.equ d2, 16
+	.equ d3, 24
+	.equ d4, 32
 
-	.equ w1n, -8
-	.equ w2n, -16
-	.equ w4n, -32
+	.equ d1n, -8
+	.equ d2n, -16
+	.equ d4n, -32
 
 	# Shift number bits to convert between words and bytes.
-	# Change if a word is not 32 bits, 4 bytes.
-	.equ sbts, 3
+	.equ wbyts, 2
+	.equ dbyts, 3
 
 # Struct stack.
 	.equ	stack_start,	0	# Ptr to start of stack.
-	.equ	stack_end,	w1	# stack_start + (sbts * number items)
-	.equ	stack_tos,	w2	# Current Top Of Stack.
-	.equ	stack_desc,	w3	# Ptr to a non-empty string, with printable characters.
-	.equ    stack_words,	4	# Number words in this struct.
+	.equ	stack_end,	d1	# stack_start + (wbyts * number items)
+	.equ	stack_tos,	d2	# Current Top Of Stack.
+	.equ	stack_desc,	d3	# Ptr to a non-empty string, with printable characters.
+	.equ    stack_words,	8	# Number words in this struct.
 
-# Global labels.
+# Global labels:
 	.global stack_new
 	.global stack_push
 	.global stack_pop
@@ -33,7 +33,7 @@
 	.global stack_print_name
 	.global stack_contains
 	
-# External labels.
+# External labels:
 	.extern endprg			# End program.
 	.extern strlen			# Load string len into a2.
 	.extern prtdec			# Print a number as base 10.
@@ -53,11 +53,11 @@ stack_new:
     blez a0, invalid_request 	# Check for zero, or negative, number of words.
 
     # Configure stack.
-    addi sp, sp, w4n		# Advance sp for stack frame.
-    sw ra, 0(sp)		# Save ra.
-    sw s1, w1(sp)		# Save s1.
-    sw s2, w2(sp)		# Save s2.
-    sw s3, w3(sp)		# Save s3.
+    addi sp, sp, d4n		# Advance sp for stack frame.
+    sd ra, 0(sp)		# Save ra.
+    sd s1, d1(sp)		# Save s1.
+    sd s2, d2(sp)		# Save s2.
+    sd s3, d3(sp)		# Save s3.
 
     mv s1, a0			# Save stack number words.
     mv s2, a1			# Save stack decription ptr.
@@ -72,23 +72,23 @@ stack_new:
     mv a0, s1			# Load stack size.
     jal mem_alloc		# Get stack memory ptr into a1.
 
-    sw a1, stack_start(s3)	# Store stack memory ptr in stack struct.
-    sw a1, stack_tos(s3)	# Store stack tos ptr in stack struct.
+    sd a1, stack_start(s3)	# Store stack memory ptr in stack struct.
+    sd a1, stack_tos(s3)	# Store stack tos ptr in stack struct.
 
-    slli t2, s1, sbts		# Multiply number words by word size to get size in bytes.
+    slli t2, s1, dbyts		# Multiply number words by word size to get size in bytes.
     add t1, a1, t2		# Add stack number bytes to stack start.
-    sw t1, stack_end(s3)	# Store end into stack struct.
+    sd t1, stack_end(s3)	# Store end into stack struct.
 
-    sw s2, stack_desc(s3)	# Store name ptr.
+    sd s2, stack_desc(s3)	# Store name ptr.
 
     mv a1, s3			# Load stack struct ptr to return in a1.
 
     # Restore stack.
-    lw s3, w3(sp)		# Restore s3.
-    lw s2, w2(sp)		# Restore a0.
-    lw s1, w1(sp)		# Return stack struct ptr.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w4		# Restore sp.
+    ld s3, d3(sp)		# Restore s3.
+    ld s2, d2(sp)		# Restore a0.
+    ld s1, d1(sp)		# Return stack struct ptr.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d4		# Restore sp.
 
     ret				# Return a1
 
@@ -110,17 +110,17 @@ invalid_request:
 #      a1, value to push.
 # Ret: Nothing.
 stack_push:
-    lw t0, stack_tos(a0)	# Load stack tos.
+    ld t0, stack_tos(a0)	# Load stack tos.
 
-    lw t1, stack_end(a0)	# Load end of stack.
+    ld t1, stack_end(a0)	# Load end of stack.
 
     bgeu t0, t1, stack_full	# Check for stack full.
 
-    sw a1, 0(t0)		# Store the word.
+    sd a1, 0(t0)		# Store the word.
 
-    addi t0, t0, w1		# Point to the next word.
+    addi t0, t0, d1		# Point to the next word.
 
-    sw t0, stack_tos(a0)	# Store the new stack ptr value.
+    sd t0, stack_tos(a0)	# Store the new stack ptr value.
 
     ret
 
@@ -128,7 +128,7 @@ stack_push:
 stack_full:
     mv s1, a0		# Save stack ptr.
 
-    lw a0, stack_desc(s1)
+    ld a0, stack_desc(s1)
     jal prtstr
 
     la a0, sf_str
@@ -141,17 +141,17 @@ stack_full:
 # In:  a0, ptr to a stack.
 # Ret: a1, value on stack.
 stack_pop:
-    lw t0, stack_tos(a0)	# Load stack tos.
+    ld t0, stack_tos(a0)	# Load stack tos.
 
-    lw t1, stack_start(a0)	# Load start of stack.
+    ld t1, stack_start(a0)	# Load start of stack.
 
     # Check for stack empty.
     bleu t0, t1, stack_empty
 
-    addi t0, t0, w1n		# Point to the previous word.
-    sw t0, stack_tos(a0)	# Store the new stack ptr.
+    addi t0, t0, d1n		# Point to the previous word.
+    sd t0, stack_tos(a0)	# Store the new stack ptr.
 
-    lw a1, 0(t0)		# Load the value into a1.
+    ld a1, 0(t0)		# Load the value into a1.
 
     ret				# Return a1.
 
@@ -159,7 +159,7 @@ stack_pop:
 stack_empty:
     mv s1, a0		# Save stack ptr.
 
-    lw a0, stack_desc(s1)
+    ld a0, stack_desc(s1)
     jal prtstr
 
     la a0, sp_empty_str
@@ -197,14 +197,14 @@ cn_loop_done:
     ret
 
 name_too_short:
-    lw a0, cn_err1_str
+    ld a0, cn_err1_str
     jal prtstr
 
     addi a0, x0, 6	# Load return code
     jal endprg
 
 name_invalid_char:
-    lw a0, cn_err2_str
+    ld a0, cn_err2_str
     jal prtstr
 
     addi a0, x0, 7	# Load return code
@@ -216,9 +216,9 @@ name_invalid_char:
 # Out: Text printed.
 stack_print_name:
    # Configure stack
-    addi sp, sp, w2n	# Advance stack pointer.
-    sw ra, 0(sp)	# Save ra.
-    sw s1, w1(sp)	# Save s1.
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
 
     mv s1, a0		# Save stack ptr.
 
@@ -227,13 +227,13 @@ stack_print_name:
     jal prtstr
 
     # Print stack name.
-    lw a0, stack_desc(s1)
+    ld a0, stack_desc(s1)
     jal prtstr
 
     # Restore stack.
-    lw s1, w1(sp)		# Restore s1.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w2		# Restore sp.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
     ret
 
 # Print a stack.
@@ -242,11 +242,11 @@ stack_print_name:
 # Out: Text printed.
 stack_print:
    # Configure stack
-    addi sp, sp, w4n	# Advance stack pointer.
-    sw ra, 0(sp)	# Save ra.
-    sw s1, w1(sp)	# Save s1.
-    sw s2, w2(sp)	# Save s2.
-    sw s3, w3(sp)	# Save s3.
+    addi sp, sp, d4n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+    sd s2, d2(sp)	# Save s2.
+    sd s3, d3(sp)	# Save s3.
 
     mv s1, a0		# Save stack ptr.
 
@@ -257,12 +257,12 @@ stack_print:
     la a0, stack_print_num
     jal prtstr
 
-    lw s2, stack_start(s1)	# Load stack start.
+    ld s2, stack_start(s1)	# Load stack start.
 
-    lw s3, stack_end(s1)	# Load stack end.
+    ld s3, stack_end(s1)	# Load stack end.
 
     sub t3, s3, s2		# Get dif in bytes.
-    srli a0, t3, sbts		# Divide by word bytes.
+    srli a0, t3, dbyts		# Divide by word bytes.
     jal prtdec			# Print as base 10.
 
     jal prtnl
@@ -270,35 +270,35 @@ stack_print:
     la a0, stack_print_items
     jal prtstr
 
-    lw t1, stack_start(s1)	# Load stack start.
-    lw t2, stack_tos(s1)	# Load stack tos.
+    ld t1, stack_start(s1)	# Load stack start.
+    ld t2, stack_tos(s1)	# Load stack tos.
 
     sub t0, t2, t1		# Get bytes difference.
-    srli a0, t0, sbts		# Divide by word bytes.
+    srli a0, t0, dbyts		# Divide by dword bytes.
     jal prtdec			# Print number active items.
 
     jal prtnl
 
    # Loop to print eack active item.
-    lw s3, stack_tos(s1)	# Load stack tos.
+    ld s3, stack_tos(s1)	# Load stack tos.
 sp_loop_next:
     bgeu s2, s3, sp_loop_end	# Exit loop if at the end of the stack.
 
-    lw a0, 0(s2)    		# load next item
+    ld a0, 0(s2)    		# load next item
     jal prthex			# Print item in hex.
 
     jal prtnl
 
-    addi s2, s2, w1		# Point to next item.
+    addi s2, s2, d1		# Point to next item.
     j sp_loop_next
 sp_loop_end:
 
     # Restore stack.
-    lw s3, w3(sp)		# Restore s3.
-    lw s2, w2(sp)		# Restore s2.
-    lw s1, w1(sp)		# Restore s1.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w4		# Restore sp.
+    ld s3, d3(sp)		# Restore s3.
+    ld s2, d2(sp)		# Restore s2.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d4		# Restore sp.
     ret
 
 # Check a stack for a value.
@@ -306,20 +306,20 @@ sp_loop_end:
 #      a1, item to check for.
 # Ret: a1 = 1 if true, 0 if false.
 stack_contains:
-    lw t1, stack_start(a0)	# Load stack start.
+    ld t1, stack_start(a0)	# Load stack start.
 
-    lw t2, stack_tos(a0)	# Load stack end.
+    ld t2, stack_tos(a0)	# Load stack end.
 
     sub t3, t2, t1		# Get dif in bytes.
-    srli t3, t3, sbts		# Divide by word bytes.
+    srli t3, t3, wbyts		# Divide by word bytes.
 
 sca_loop_next:
     bgeu t1, t2, sca_loop_end	# Exit loop if at the end of the stack.
 
-    lw t0, 0(t1) 		# load next item
+    ld t0, 0(t1) 		# load next item
     beq t0, a1, sca_true	# Error if item found.
 
-    addi t1, t1, w1		# Point to next item
+    addi t1, t1, d1		# Point to next item
     j sca_loop_next
 sca_loop_end:
 
@@ -336,5 +336,5 @@ cn_err2_str: 		.asciz "Invalid character in stack name?\n"
 stack_print_prefix:	.asciz	"\nStack Name: "
 stack_print_num:	.asciz  "Max Items: "
 stack_print_items:	.asciz  "Number Available Items: "
-sf_str:			.asciz	" stack: stack_push: stack full\n"
-sp_empty_str:		.asciz	" stack: stack_pop: stack empty\n"
+sf_str:			.asciz	": stack full\n"
+sp_empty_str:		.asciz	": stack empty\n"

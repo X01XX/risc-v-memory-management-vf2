@@ -10,21 +10,20 @@
 # Set available memory.
 	.equ number_bytes, 4000
 
-# Word sizes. Change if a word is not 32 bits, 4 bytes.
-	.equ w1, 8
+# Doubleword sizes:
+	.equ d1, 8
 	
-	.equ w1n, -8
+	.equ d1n, -8
 
-	# Shift number bits to convert between words and bytes.
-	# Change if a word is not 32 bits, 4 bytes.
-	.equ sbts, 3
+# Shift number bits to convert between words and bytes.
+	.equ wbyts, 2
 
-# GLobal labels:
+# Global labels:
 	.global mem_init
 	.global mem_alloc
 	.global mem_left
 
-# External labels.
+# External labels:
 	.extern endprg		# End program.
 	.extern prtdec		# Print a number in base 10.
         
@@ -35,7 +34,7 @@
 mem_init:
     la t0, mem		# Load ptr to memory block.
     la t1, mem_ptr	# Load ptr to word storing the ptr to the next free word.
-    sw t0, 0(t1)	# Store ptr to memory block.
+    sd t0, 0(t1)	# Store ptr to memory block.
     ret
 
 # Allocate a block of memory.
@@ -45,15 +44,15 @@ mem_alloc:
     blez a0, invalid_request	# Check for zero, or negative, memory request.
 
     la t0, mem_ptr
-    lw a1, 0(t0)	# Get free block pointer, for return.
+    ld a1, 0(t0)	# Get free block pointer, for return.
 
-    slli t1, a0, sbts	# Multiply word number by number bytes per word.
+    slli t1, a0, wbyts	# Multiply word number by number bytes per word.
     add t1, a1, t1	# Increment memory pointer to new free block start.
 
     la t2, mem_end	# Check if new free block pointer is beyond the end of memory.
     bltu t2, t1, out_of_memory
 
-    sw t1, 0(t0)	# Store new free block pointer.
+    sd t1, 0(t0)	# Store new free block pointer.
 
     ret			# Return a1
    
@@ -79,17 +78,17 @@ out_of_memory:
 # Out: A message is displayed.
 mem_left:
     # Configure stack.
-    addi sp, sp, w1n		# Advance sp for stack frame.
-    sw ra, 0(sp)                # Save ra.
+    addi sp, sp, d1n		# Advance sp for stack frame.
+    sd ra, 0(sp)                # Save ra.
     
     # Get pointer to next free block.
     la t0, mem_ptr
-    lw t1, 0(t0)
+    ld t1, 0(t0)
 
     la t2, mem_end	# Get end of memory
 
     sub t3, t2, t1	# Get difference, in bytes.
-    srli t3, t3, sbts	# Convert to words.
+    srli t3, t3, wbyts	# Convert to words.
     
     mv a0, t3		# Load number to print
     jal prtdec
@@ -97,10 +96,10 @@ mem_left:
     la a0, mem_left_str1	# Load addr of string.
     jal prtstr
     
-    la t0, mem_ptr	# Get ptr to memory start.
+    la t0, mem		# Get ptr to memory start.
     la t2, mem_end	# Get ptr to memory end.
     sub t3, t2, t0	# Get difference, in bytes.
-    srli t3, t3, sbts	# Convert to words.
+    srli t3, t3, wbyts	# Convert to words.
     
     mv a0, t3		# Load number to print.
     jal prtdec		# Print it in base 10.
@@ -109,8 +108,8 @@ mem_left:
     jal prtstr
     
     # Restore stack.
-    lw ra, 0(sp)		# Restore ra.
-    addi sp, sp, w1             # Restore sp.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d1             # Restore sp.
 
     ret
 
@@ -122,8 +121,8 @@ mem_left_str2:	.asciz	" allocate-only memory left.\n"
 .data
 
 # Pointer to the next free memory block.
-.align w1
-mem_ptr:	 .word 0
+.align d1
+mem_ptr:	 .dword 0
 
 # Start, and end of free memory allocation.
 mem:		.zero number_bytes
