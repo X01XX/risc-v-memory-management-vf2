@@ -18,7 +18,7 @@
 # Struct element:
         .equ element_id, 	0	# 4 bytes, 1 word. Element struct ID value.
         .equ element_name,	4	# 8 bytes, 2 words. Ptr to element name string. 
-        .equ element_atomic_number, 12	# 4 bytes, 1 words. Atomic number.
+        .equ element_atomic_number, 12	# 4 bytes, 1 word. Atomic number.
         .equ element_words,	4
 
 #  Global labels:
@@ -96,6 +96,7 @@ element_new:
     # Allocate a new element instance, or stack empty.
     la t0, element_sa_ptr
     ld a0, 0(t0)		# Get element stack_array pointer.
+    beqz a0, ele_not_inititalized
     jal stack_array_alloc	# Get a new item into a1, or stack empty.
 
     # Load values into element instance.
@@ -129,6 +130,7 @@ element_dealloc:
     mv a1, a0			# Item ptr to a1.
     la t0, element_sa_ptr
     ld a0, 0(t0)		# Get element stack_array pointer.
+    beqz a0, ele_not_inititalized
     jal stack_array_dealloc	# Add instance back to element stack.
 
     # Restore stack.
@@ -190,6 +192,7 @@ element_stack_print:
 
     la t0, element_sa_ptr
     ld a0, 0(t0)		# Load element stack ptr.
+    beqz a0, ele_not_inititalized
 
     jal stack_array_print	# Print the stack.
    
@@ -358,6 +361,16 @@ edl_loop_end:
     addi sp, sp, d3             # Restore sp.
 
     ret
+
+# Print inititalization error and exit.
+ele_not_inititalized:
+    la a0, ele_str
+    jal prtstr
+
+    li a0, 18
+    jal endprg
+
+ele_str: 	.asciz "Element stack-array not initialized\n"
 
 # Name for element stack_array instance.
 element_str:       .asciz  "Element"

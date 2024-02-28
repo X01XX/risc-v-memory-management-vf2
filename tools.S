@@ -262,7 +262,8 @@ sl_skip_check:
 sl_loop_done:
     ret
 
-.data
-char: .ascii " "			# Storage for 1 byte.
 nl:   .ascii "\n"
 hprefix: .asciz "0x"
+
+.data
+char: .ascii " "			# Storage for 1 byte.

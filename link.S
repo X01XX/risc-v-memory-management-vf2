@@ -94,6 +94,8 @@ link_new:
     # Allocate a new link instance, or stack empty.
     la t0, link_sa_ptr
     ld a0, 0(t0)		# Get link stack_array pointer.
+    beqz a0, lnk_not_inititalized
+
     jal stack_array_alloc	# Get a new item into a1, or stack empty.
 
     # Load values to instance.
@@ -282,7 +284,10 @@ link_dealloc:
 
     # Deallocate.
     mv a1, a0			# Item ptr to a1.
+
     la t0, link_sa_ptr
+    beqz t0, lnk_not_inititalized
+
     ld a0, 0(t0)		# Get link stack_array pointer.
     jal stack_array_dealloc	# Add instance back to link stack.
 
@@ -345,6 +350,8 @@ link_stack_print:
 
     la t0, link_sa_ptr
     ld a0, 0(t0)		# Load link stack ptr.
+    beqz a0, lnk_not_inititalized
+
 
     jal stack_array_print	# Print the stack.
    
@@ -510,6 +517,15 @@ lie_end:
 
     ret
 
+# Print inititalization error and exit.
+lnk_not_inititalized:
+    la a0, lnk_str
+    jal prtstr
+
+    li a0, 17
+    jal endprg
+
+lnk_str: 	.asciz "Link stack-array not initialized\n"
 next_err_str:	.asciz "\nLink empty, but next non-zero"
 lpo_err_str:	.asciz	"\nList_pop: empty list."
 lp_id_err_str:	.asciz	"List_push: Invalid struct ID."

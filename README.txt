@@ -57,6 +57,11 @@ Memory:
 
     2  - Out of memory, request cannot be satisfied.
 
+
+  varies:
+
+    16 - Stack-array not initialized.
+
 Stack:
 
   stack_new:
@@ -107,9 +112,17 @@ Link:
 
     14 - List is empty, val = 0, but next is not = 0?
 
+  varies:
+
+    17 - Stack-array not initialized.
+
 Element:
 
   element_dealloc:
 
     15 - Invalid element ID.  (pushing a non-element struct, invalid address?)
+
+  varies:
+
+    18 - Stack-array not initialized.
 

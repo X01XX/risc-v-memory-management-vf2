@@ -45,6 +45,7 @@ mem_alloc:
 
     la t0, mem_ptr
     ld a1, 0(t0)	# Get free block pointer, for return.
+    beqz a1, mem_not_inititalized
 
     slli t1, a0, wbyts	# Multiply word number by number bytes per word.
     add t1, a1, t1	# Increment memory pointer to new free block start.
@@ -84,6 +85,7 @@ mem_left:
     # Get pointer to next free block.
     la t0, mem_ptr
     ld t1, 0(t0)
+    beqz t1, mem_not_inititalized
 
     la t2, mem_end	# Get end of memory
 
@@ -113,6 +115,15 @@ mem_left:
 
     ret
 
+# Print inititalization error and exit.
+mem_not_inititalized:
+    la a0, mni_str
+    jal prtstr
+
+    li a0, 16
+    jal endprg
+
+mni_str: 	.asciz "Memory not initialized\n"
 invalid_str:	.asciz "Invalid memory request\n"
 out_str:	.asciz "Out of memory\n"
 mem_left_str1:	.asciz	" Words of "
