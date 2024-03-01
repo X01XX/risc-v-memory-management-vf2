@@ -21,7 +21,7 @@ Within the limit of the stack-array capacity of pstructs (which you set), alloca
 
 The entropy of various allocations, and deallocations, appears in the increasing disorder of the addresses on the stack, which has no effect on the utility, or speed, of the stack-array. A win against entropy?
 
-The example uses a small linked list of pstructs containing information on elements.  The element.a file can be copied and changed for any number of other pstructs.
+The example uses a small linked list of pstructs containing information on elements.  The element.S file can be copied and changed for any number of other pstructs.
 
 Deallocate lists, and other pstructs, as soon as they are no longer needed.
 
