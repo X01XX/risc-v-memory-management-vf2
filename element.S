@@ -64,6 +64,10 @@ element_init:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
+    la t0, element_sa_ptr	# Load addr of word containing element sa ptr.
+    ld t1, 0(t0)		# Check for previous inititalization.
+    bnez t1, element_init_err
+
     li a1, element_words	# Load number words per item.
     la a2, element_str		# Load stack_array decription ptr.
     jal stack_array_new		# sa struct adr to a1
@@ -72,6 +76,13 @@ element_init:
     la t0, element_sa_ptr
     sd a1, 0(t0)
 
+    j element_init_ret
+
+element_init_err:
+    la a0, element_init_err_str
+    jal prtstr
+
+element_init_ret:
     # Restore stack.
     ld ra, 0(sp)		# Restore ra.
     addi sp, sp, d1             # Restore sp.
@@ -378,6 +389,7 @@ element_str:       .asciz  "Element"
 el_name_str:	.asciz "Name: "
 el_an_str:	.asciz ", AN: "
 eid_err_str:	.asciz  "Invalid instance element id"
+element_init_err_str: .asciz "Element already inititalized\n"
 
 .data
 

@@ -32,9 +32,29 @@
 # In:  Nothing.
 # Out: Nothing.
 mem_init:
+    # Configure stack.
+    addi sp, sp, d1n	# Advance sp for stack frame.
+    sd ra, 0(sp)	# Save ra.
+
+    la t1, mem_ptr	# Load addr of word storing the ptr to the next free word.
+
+    ld t0, 0(t1)	# Check for previous inititalization.
+    bnez t0, mem_init_err
+
     la t0, mem		# Load ptr to memory block.
-    la t1, mem_ptr	# Load ptr to word storing the ptr to the next free word.
+
     sd t0, 0(t1)	# Store ptr to memory block.
+    j mem_init_err
+
+mem_init_err:
+    la a0, mem_init_err_str
+    jal prtstr
+
+mem_init_ret:
+    # Cleanup stack.
+    ld ra, 0(sp)	# Restore ra.
+    addi sp, sp, d1	# Restore sp.
+
     ret
 
 # Allocate a block of memory.
@@ -128,6 +148,7 @@ invalid_str:	.asciz "Invalid memory request\n"
 out_str:	.asciz "Out of memory\n"
 mem_left_str1:	.asciz	" Words of "
 mem_left_str2:	.asciz	" allocate-only memory left.\n"
+mem_init_err_str: .asciz "Memory already initialized\n"
 
 .data
 

@@ -62,6 +62,10 @@ link_init:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)        # Save ra.
 
+    la t0, link_sa_ptr	# Load addr of word containing the sa ptr.
+    ld t1, 0(t0)	# Check for previous inititalization.
+    bnez t1, link_init_err
+
     li a1, link_words   # Load number words per item.
     la a2, link_str     # Load stack_array decription ptr.
     jal stack_array_new # sa struct adr to a1
@@ -70,6 +74,13 @@ link_init:
     la t0, link_sa_ptr
     sd a1, 0(t0)
 
+    j link_init_ret
+
+link_init_err:
+    la a0, link_init_err_str
+    jal prtstr
+
+link_init_ret:
     # Cleanup stack.
     ld ra, 0(sp)	# Restore ra.
     addi sp, sp, d1     # Restore sp.
@@ -533,6 +544,7 @@ lid_err_str:    .asciz  "Invalid instance link id"
 link_str:       .asciz  "Links"
 lp_val_str:	.asciz "Value: "
 lp_nxt_str:	.asciz ", Next: "
+link_init_err_str: .asciz "Link already initialized\n"
 
 .data 
 
