@@ -44,7 +44,7 @@ mem_init:
     la t0, mem		# Load ptr to memory block.
 
     sd t0, 0(t1)	# Store ptr to memory block.
-    j mem_init_err
+    j mem_init_ret
 
 mem_init_err:
     la a0, mem_init_err_str
