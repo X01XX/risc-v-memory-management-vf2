@@ -34,6 +34,7 @@
 	.global list_pop
 	.global list_len
 	.global list_is_empty
+	.global link_left
 
 # External labels:
 	.extern endprg		# End program.
@@ -48,6 +49,7 @@
         .extern stack_array_alloc
         .extern stack_array_dealloc
         .extern stack_array_print
+        .extern stack_array_left
 
 # ID to identify a link instance.
 	.equ link_id_val, 1319
@@ -535,6 +537,26 @@ lnk_not_inititalized:
 
     li a0, 17
     jal endprg
+
+# Print a summary of memory usage.
+# In:  Nothing.
+# Ret: Nothing.
+# Out: Text to StdOut.
+link_left:
+    # Configure stack.
+    addi sp, sp, d1n	# Advance sp for stack frame.
+    sd ra, 0(sp)	# Save ra.
+
+    la a0, link_sa_ptr
+    ld a0, 0(a0)	# Load ptr to link stack_array.
+
+    jal stack_array_left
+
+    # Cleanup stack.
+    ld ra, 0(sp)	# Restore ra.
+    addi sp, sp, d1	# Restore sp.
+
+    ret
 
 lnk_str: 	.asciz "Link stack-array not initialized\n"
 next_err_str:	.asciz "\nLink empty, but next non-zero"

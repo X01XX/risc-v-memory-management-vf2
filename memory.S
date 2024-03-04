@@ -102,6 +102,10 @@ mem_left:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
     
+    # Print prefix.
+    la a0, mem_left_str1
+    jal prtstr
+
     # Get pointer to next free block.
     la t0, mem_ptr
     ld t1, 0(t0)
@@ -115,7 +119,7 @@ mem_left:
     mv a0, t3		# Load number to print
     jal prtdec
  
-    la a0, mem_left_str1	# Load addr of string.
+    la a0, mem_left_str2	# Load addr of string.
     jal prtstr
     
     la t0, mem		# Get ptr to memory start.
@@ -126,7 +130,7 @@ mem_left:
     mv a0, t3		# Load number to print.
     jal prtdec		# Print it in base 10.
   
-    la a0, mem_left_str2	# Load addr of string.
+    la a0, mem_left_str3	# Load addr of string.
     jal prtstr
     
     # Restore stack.
@@ -146,8 +150,9 @@ mem_not_inititalized:
 mni_str: 	.asciz "Memory not initialized\n"
 invalid_str:	.asciz "Invalid memory request\n"
 out_str:	.asciz "Out of memory\n"
-mem_left_str1:	.asciz	" Words of "
-mem_left_str2:	.asciz	" allocate-only memory left.\n"
+mem_left_str1:	.asciz	"Allocate-only memory: "
+mem_left_str2:	.asciz	" Words of "
+mem_left_str3:	.asciz	" left.\n"
 mem_init_err_str: .asciz "Memory already initialized\n"
 
 .data

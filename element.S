@@ -29,6 +29,7 @@
 	.global element_stack_print
 	.global element_print
 	.global element_list_print
+	.global element_left
 	
 # External labels:
 	.extern endprg
@@ -43,6 +44,7 @@
         .extern stack_array_alloc
         .extern stack_array_dealloc
         .extern stack_array_print
+        .extern stack_array_left
 
 	.extern is_link
 	.extern link_val
@@ -380,6 +382,27 @@ ele_not_inititalized:
 
     li a0, 18
     jal endprg
+
+
+# Print a summary of memory usage.
+# In:  Nothing.
+# Ret: Nothing.
+# Out: Text to StdOut.
+element_left:
+    # Configure stack.
+    addi sp, sp, d1n	# Advance sp for stack frame.
+    sd ra, 0(sp)	# Save ra.
+
+    la a0, element_sa_ptr
+    ld a0, 0(a0)	# Load ptr to element stack_array.
+
+    jal stack_array_left
+
+    # Cleanup stack.
+    ld ra, 0(sp)	# Restore ra.
+    addi sp, sp, d1	# Restore sp.
+
+    ret
 
 ele_str: 	.asciz "Element stack-array not initialized\n"
 

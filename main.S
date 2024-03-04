@@ -26,6 +26,7 @@
         .extern list_pop
         .extern list_len
         .extern list_is_empty
+        .extern link_left
 
 	.extern element_init
 	.extern element_new
@@ -34,6 +35,12 @@
 	.extern element_list_print
 	.extern element_stack_print
 	.extern element_list_dealloc
+	.extern element_left
+
+# Doubleword sizes.
+	.equ d1, 8
+
+	.equ d1n, -8
 
 _start:
     # Init alloc-only memory bank.
@@ -52,9 +59,7 @@ after_init:
 
     jal element_stack_print
 
-    # Print memory usage.
     jal prtnl
-    jal mem_left
 
     # Init new list, save to s1.
     jal list_new
@@ -90,7 +95,9 @@ after_init:
     la a1, sep1
     jal element_list_print
 
+    # Print memory summary, so far.
     jal prtnl
+    jal mem_summary
 
     # Display length and empty
     la a0, len_str
@@ -212,8 +219,33 @@ after_init:
 
     jal element_stack_print
 
+    jal mem_summary
+
     mv a0, x0
     jal endprg
+
+# Print a summary of memory usage.
+# In:  Nothing.
+# Ret: Nothing.
+# Out: Text to StdOut.
+mem_summary:
+
+    # Configure stack.
+    addi sp, sp, d1n	# Advance sp for stack frame.
+    sd ra, 0(sp)	# Save ra.
+
+    jal prtnl
+    jal mem_left
+    jal link_left
+    jal element_left
+    # Any number of additional pstruct stack_arrays.
+
+    # Cleanup stack.
+    ld ra, 0(sp)	# Restore ra.
+    addi sp, sp, d1	# Restore sp.
+
+    ret
+
 
 sep1: .asciz ", "
 h_name: .asciz "Hydrogen"

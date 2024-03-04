@@ -47,6 +47,7 @@
 	.global stack_array_dealloc
 	.global stack_array_alloc
 	.global stack_array_print
+	.global stack_array_left
 
 # External labels:
 	.extern endprg			# End program.
@@ -61,6 +62,7 @@
 	.extern stack_print
 	.extern stack_print_name
 	.extern stack_contains
+	.extern stack_left
 
 # Generate a stack-array
 # mem_init needs to be called from main before calling this.
@@ -303,6 +305,24 @@ sad_err:
 
     addi a0, x0, 10	# Load return code
     jal endprg
+
+# Print a summary of stack_array usage.
+# In: a0  - Ptr to a stack_array instance.
+# Ret: Nothing.
+# Out: Text to StdOut.
+stack_array_left:
+    # Configure stack.
+    addi sp, sp, d1n	# Advance sp for stack frame.
+    sd ra, 0(sp)	# Save ra.
+
+    ld a0, sa_stack_ptr(a0)	# Get stack addr.
+    jal stack_left
+
+    # Cleanup stack.
+    ld ra, 0(sp)	# Restore ra.
+    addi sp, sp, d1	# Restore sp.
+
+    ret
 
 invalid_num_words_str:     .asciz "stack_array_new: Invalid number of words"
 invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"

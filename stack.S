@@ -12,6 +12,7 @@
 
 	.equ d1n, -8
 	.equ d2n, -16
+	.equ d3n, -24
 	.equ d4n, -32
 
 	# Shift number bits to convert between words and bytes.
@@ -32,6 +33,7 @@
 	.global stack_print
 	.global stack_print_name
 	.global stack_contains
+	.global stack_left
 	
 # External labels:
 	.extern endprg			# End program.
@@ -301,6 +303,70 @@ sp_loop_end:
     addi sp, sp, d4		# Restore sp.
     ret
 
+# Print summary of stack usage.
+# In:  a0 - ptr to a stack instance.
+# Ret: Nothing.
+# Out: Text to StdOut.
+stack_left:
+
+    # Configure stack.
+    addi sp, sp, d3n
+    sd ra, 0(sp)                # Save ra.
+    sd s1, d1(sp)               # Save s1.
+    sd s2, d2(sp)               # Save s2.
+
+    mv s1, a0		# Save stack ptr.
+
+    la a0, sl_str1	# Print Stack:
+    jal prtstr
+
+    ld a0, stack_desc(s1)	# Print stack name.
+    jal prtstr
+
+    la a0, sl_str2		# Print comma space.
+    jal prtstr
+
+    ld t0, stack_start(s1)	# Load stack start.
+    ld t1, stack_tos(s1)	# Load stack tos.
+
+    sub t1, t1, t0		# Get dif in bytes.
+    srli s2, t1, dbyts		# Divide by dword bytes.
+
+    mv a0, s2
+    jal prtdec			# Print items left as base 10.
+
+    # Print "item(s) of"
+    la a0, sl_str3		# Print "item"
+    jal prtstr
+
+    li t0, 1
+    beq s2, t0, sl_skip_plural
+
+    li a0, 's'
+    jal prtchr			# Print "s"
+
+sl_skip_plural:
+    la a0, sl_str4		# Print " of "
+    jal prtstr
+
+    ld t0, stack_start(s1)	# Load stack start.
+    ld t1, stack_end(s1)	# Load stack end.
+
+    sub t1, t1, t0		# Get dif in bytes.
+    srli a0, t1, dbyts		# Divide by dword bytes.
+    jal prtdec			# Print total items as base 10.
+
+    la a0, sl_str5		# Print "left.".
+    jal prtstr
+
+    # Restore stack.
+    ld s2, d2(sp)               # Restore s2.
+    ld s1, d1(sp)               # Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d3             # Restore sp.
+
+    ret
+
 # Check a stack for a value.
 # In:  a0, ptr to a stack struct.
 #      a1, item to check for.
@@ -333,8 +399,13 @@ sca_true:
 cn_err1_str:		.asciz "Empty string for stack name?"
 invalid_str:    	.asciz "Invalid number of words "
 cn_err2_str: 		.asciz "Invalid character in stack name?\n"
-stack_print_prefix:	.asciz	"\nStack Name: "
-stack_print_num:	.asciz  "Max Items: "
-stack_print_items:	.asciz  "Number Available Items: "
-sf_str:			.asciz	": stack full\n"
-sp_empty_str:		.asciz	": stack empty\n"
+stack_print_prefix:	.asciz "\nStack Name: "
+stack_print_num:	.asciz "Max Items: "
+stack_print_items:	.asciz "Number Available Items: "
+sf_str:			.asciz ": stack full\n"
+sp_empty_str:		.asciz ": stack empty\n"
+sl_str1:		.asciz "Stack: "
+sl_str2:		.asciz ",  "
+sl_str3:		.asciz " item"
+sl_str4:		.asciz " of "
+sl_str5:		.asciz " left.\n"
