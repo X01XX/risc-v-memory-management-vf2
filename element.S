@@ -66,7 +66,8 @@ element_init:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    la t0, element_sa_ptr	# Load addr of word containing element sa ptr.
+    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+
     ld t1, 0(t0)		# Check for previous inititalization.
     bnez t1, element_init_err
 
@@ -75,7 +76,8 @@ element_init:
     jal stack_array_new		# sa struct adr to a1
 
     # Save element sa ptr.
-    la t0, element_sa_ptr
+    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+
     sd a1, 0(t0)
 
     j element_init_ret
@@ -107,7 +109,8 @@ element_new:
     mv s2, a1			# Save atomic number to s2.
 
     # Allocate a new element instance, or stack empty.
-    la t0, element_sa_ptr
+    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+
     ld a0, 0(t0)		# Get element stack_array pointer.
     beqz a0, ele_not_inititalized
     jal stack_array_alloc	# Get a new item into a1, or stack empty.
@@ -141,7 +144,8 @@ element_dealloc:
 
     # Deallocate.
     mv a1, a0			# Item ptr to a1.
-    la t0, element_sa_ptr
+    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+
     ld a0, 0(t0)		# Get element stack_array pointer.
     beqz a0, ele_not_inititalized
     jal stack_array_dealloc	# Add instance back to element stack.
@@ -203,7 +207,8 @@ element_stack_print:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    la t0, element_sa_ptr
+    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+
     ld a0, 0(t0)		# Load element stack ptr.
     beqz a0, ele_not_inititalized
 
@@ -393,8 +398,9 @@ element_left:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save ra.
 
-    la a0, element_sa_ptr
-    ld a0, 0(a0)	# Load ptr to element stack_array.
+    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+
+    ld a0, 0(t0)	# Load ptr to element stack_array.
 
     jal stack_array_left
 
@@ -413,6 +419,8 @@ el_name_str:	.asciz "Name: "
 el_an_str:	.asciz ", AN: "
 eid_err_str:	.asciz  "Invalid instance element id"
 element_init_err_str: .asciz "Element already inititalized\n"
+
+element_sa_ptr_addr:   .dword element_sa_ptr
 
 .data
 

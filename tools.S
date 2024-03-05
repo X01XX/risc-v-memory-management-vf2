@@ -186,9 +186,10 @@ prtchr:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    la t0, char
-    sb a0, 0(t0)
-    la a1, char			# Load addr of character
+    ld a1, char_addr		# Get char buffer address.
+
+    sb a0, 0(a1)
+     			# Load addr of character
     addi a0, x0, 1		# StdOut
     addi a2, x0, 1		# String length
     addi a7, x0, 64		# linux write call
@@ -265,5 +266,8 @@ sl_loop_done:
 nl:   .ascii "\n"
 hprefix: .asciz "0x"
 
+char_addr:	.dword char
+
 .data
+
 char: .ascii " "			# Storage for 1 byte.

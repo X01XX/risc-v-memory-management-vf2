@@ -36,12 +36,12 @@ mem_init:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save ra.
 
-    la t1, mem_ptr	# Load addr of word storing the ptr to the next free word.
+    ld t1, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
 
     ld t0, 0(t1)	# Check for previous inititalization.
     bnez t0, mem_init_err
 
-    la t0, mem		# Load ptr to memory block.
+    ld t0, mem_start_addr	# Load ptr to memory block.
 
     sd t0, 0(t1)	# Store ptr to memory block.
     j mem_init_ret
@@ -63,14 +63,16 @@ mem_init_ret:
 mem_alloc:
     blez a0, invalid_request	# Check for zero, or negative, memory request.
 
-    la t0, mem_ptr
+    ld t0, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
+
     ld a1, 0(t0)	# Get free block pointer, for return.
     beqz a1, mem_not_inititalized
 
     slli t1, a0, wbyts	# Multiply word number by number bytes per word.
     add t1, a1, t1	# Increment memory pointer to new free block start.
 
-    la t2, mem_end	# Check if new free block pointer is beyond the end of memory.
+    ld t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
+
     bltu t2, t1, out_of_memory
 
     sd t1, 0(t0)	# Store new free block pointer.
@@ -107,11 +109,12 @@ mem_left:
     jal prtstr
 
     # Get pointer to next free block.
-    la t0, mem_ptr
+    ld t0, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
+
     ld t1, 0(t0)
     beqz t1, mem_not_inititalized
 
-    la t2, mem_end	# Get end of memory
+    ld t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
 
     sub t3, t2, t1	# Get difference, in bytes.
     srli t3, t3, wbyts	# Convert to words.
@@ -122,8 +125,10 @@ mem_left:
     la a0, mem_left_str2	# Load addr of string.
     jal prtstr
     
-    la t0, mem		# Get ptr to memory start.
-    la t2, mem_end	# Get ptr to memory end.
+    ld t0, mem_start_addr	# Load ptr to memory block.
+
+    ld t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
+
     sub t3, t2, t0	# Get difference, in bytes.
     srli t3, t3, wbyts	# Convert to words.
     
@@ -155,6 +160,10 @@ mem_left_str2:	.asciz	" Words of "
 mem_left_str3:	.asciz	" left.\n"
 mem_init_err_str: .asciz "Memory already initialized\n"
 
+mem_ptr_addr:	.dword mem_ptr
+mem_start_addr:	.dword mem_start
+mem_end_addr:	.dword mem_end
+
 .data
 
 # Pointer to the next free memory block.
@@ -162,6 +171,6 @@ mem_init_err_str: .asciz "Memory already initialized\n"
 mem_ptr:	 .dword 0
 
 # Start, and end of free memory allocation.
-mem:		.zero number_bytes
+mem_start:		.zero number_bytes
 mem_end:
 

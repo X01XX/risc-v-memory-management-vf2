@@ -64,16 +64,20 @@ link_init:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)        # Save ra.
 
-    la t0, link_sa_ptr	# Load addr of word containing the sa ptr.
+    ld t0, link_sa_ptr_addr	# Load link stack_array address.
+
     ld t1, 0(t0)	# Check for previous inititalization.
+
     bnez t1, link_init_err
 
     li a1, link_words   # Load number words per item.
+
     la a2, link_str     # Load stack_array decription ptr.
+
     jal stack_array_new # sa struct adr to a1
 
     # Save link sa ptr.
-    la t0, link_sa_ptr
+    ld t0, link_sa_ptr_addr	# Load link stack_array address.
     sd a1, 0(t0)
 
     j link_init_ret
@@ -105,8 +109,8 @@ link_new:
     mv s2, a1                   # Save link next to s2.
 
     # Allocate a new link instance, or stack empty.
-    la t0, link_sa_ptr
-    ld a0, 0(t0)		# Get link stack_array pointer.
+    ld t0, link_sa_ptr_addr	# Load link stack_array address.
+    ld a0, 0(t0)		# Load link stack_array pointer.
     beqz a0, lnk_not_inititalized
 
     jal stack_array_alloc	# Get a new item into a1, or stack empty.
@@ -298,10 +302,12 @@ link_dealloc:
     # Deallocate.
     mv a1, a0			# Item ptr to a1.
 
-    la t0, link_sa_ptr
-    beqz t0, lnk_not_inititalized
+    ld t0, link_sa_ptr_addr	# Load link stack_array address.
 
     ld a0, 0(t0)		# Get link stack_array pointer.
+    beqz t0, lnk_not_inititalized
+
+    #ld a0, 0(t0)		# Get link stack_array pointer.
     jal stack_array_dealloc	# Add instance back to link stack.
 
     # Restore stack.
@@ -361,7 +367,8 @@ link_stack_print:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    la t0, link_sa_ptr
+    ld t0, link_sa_ptr_addr	# Load link stack_array address.
+
     ld a0, 0(t0)		# Load link stack ptr.
     beqz a0, lnk_not_inititalized
 
@@ -547,8 +554,9 @@ link_left:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save ra.
 
-    la a0, link_sa_ptr
-    ld a0, 0(a0)	# Load ptr to link stack_array.
+    ld t0, link_sa_ptr_addr	# Load link stack_array address.
+
+    ld a0, 0(t0)	# Load ptr to link stack_array.
 
     jal stack_array_left
 
@@ -567,6 +575,8 @@ link_str:       .asciz  "Links"
 lp_val_str:	.asciz "Value: "
 lp_nxt_str:	.asciz ", Next: "
 link_init_err_str: .asciz "Link already initialized\n"
+
+link_sa_ptr_addr:   .dword link_sa_ptr
 
 .data 
 
