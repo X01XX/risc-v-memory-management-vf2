@@ -31,28 +31,6 @@
 	.global element_list_print
 	.global element_left
 	
-# External labels:
-	.extern endprg
-	.extern prtchr
-	.extern prtstr
-	.extern prtdec
-
-        .extern mem_init
-        .extern mem_alloc
-
-        .extern stack_array_new
-        .extern stack_array_alloc
-        .extern stack_array_dealloc
-        .extern stack_array_print
-        .extern stack_array_left
-
-	.extern is_link
-	.extern link_val
-	.extern link_print
-	.extern link_get_val
-	.extern link_get_next
-	.extern link_list_dealloc
-
 # ID to identify a element instance.
 	.equ element_id_val, 1153
 

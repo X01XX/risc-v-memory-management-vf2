@@ -35,16 +35,6 @@
 	.global stack_contains
 	.global stack_left
 	
-# External labels:
-	.extern endprg			# End program.
-	.extern strlen			# Load string len into a2.
-	.extern prtdec			# Print a number as base 10.
-	.extern prthex			# Print a number as base 16.
-	.extern prtnl			# Print a newline.
-	.extern prtstr			# Print a string.
-
-	.extern mem_alloc		# Get memory from allocate-only memory store.
-
 # Initialize and return a stack.
 # mem_init needs to be called from main before calling this.
 #
@@ -149,7 +139,7 @@ stack_pop:
 
     # Check for stack empty.
     bleu t0, t1, stack_empty
-
+    
     addi t0, t0, d1n		# Point to the previous word.
     sd t0, stack_tos(a0)	# Store the new stack ptr.
 

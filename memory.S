@@ -22,11 +22,8 @@
 	.global mem_init
 	.global mem_alloc
 	.global mem_left
+	.global mem_within
 
-# External labels:
-	.extern endprg		# End program.
-	.extern prtdec		# Print a number in base 10.
-        
 # Initialize the memory store.
 # Call from main before using mem_alloc.
 # In:  Nothing.
@@ -151,6 +148,27 @@ mem_not_inititalized:
 
     li a0, 16
     jal endprg
+
+# Return true if a given address is within memory.
+# In:  a0 - Address.
+# Ret: a0 - 1 = true, 0 = false.
+mem_within:
+    ld t0, mem_start_addr
+    ld t0, 0(t0)
+    blt a0, t0, wm_ret_false
+
+    ld t0, mem_end_addr
+    ld t0, 0(t0)
+    bgt a0, t0, wm_ret_false
+
+    li a0, 1
+    j wm_ret
+
+wm_ret_false:
+    mv a0, x0
+
+wm_ret:
+    ret
 
 mni_str: 	.asciz "Memory not initialized\n"
 invalid_str:	.asciz "Invalid memory request\n"

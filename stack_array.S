@@ -49,21 +49,6 @@
 	.global stack_array_print
 	.global stack_array_left
 
-# External labels:
-	.extern endprg			# End program.
-	.extern prthex			# Print a number in base 16.
-	.extern prtstr			# Print a string.
-
-	.extern mem_alloc		# Get memory from allocate-only memory store.
-
-	.extern stack_new
-	.extern stack_push
-	.extern stack_pop
-	.extern stack_print
-	.extern stack_print_name
-	.extern stack_contains
-	.extern stack_left
-
 # Generate a stack-array
 # mem_init needs to be called from main before calling this.
 #

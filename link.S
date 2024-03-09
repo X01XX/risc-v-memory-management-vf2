@@ -35,21 +35,7 @@
 	.global list_len
 	.global list_is_empty
 	.global link_left
-
-# External labels:
-	.extern endprg		# End program.
-	.extern prtnl		# Print newline.
-	.extern prthex		# Print number in base 16.
-	.extern	prtstr		# Print a string.
-
-        .extern mem_init
-        .extern mem_alloc
-
-        .extern stack_array_new
-        .extern stack_array_alloc
-        .extern stack_array_dealloc
-        .extern stack_array_print
-        .extern stack_array_left
+	.global link_new
 
 # ID to identify a link instance.
 	.equ link_id_val, 1319
@@ -64,11 +50,11 @@ link_init:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)        # Save ra.
 
-    ld t0, link_sa_ptr_addr	# Load link stack_array address.
+    # Load link stack-array ptr.
+    ld t1, link_sa_ptr_addr
+    ld t1, 0(t1)
 
-    ld t1, 0(t0)	# Check for previous inititalization.
-
-    bnez t1, link_init_err
+    bnez t1, link_init_err	# Branch if evidence of previous inititalization.
 
     li a1, link_words   # Load number words per item.
 
@@ -109,13 +95,16 @@ link_new:
     mv s2, a1                   # Save link next to s2.
 
     # Allocate a new link instance, or stack empty.
-    ld t0, link_sa_ptr_addr	# Load link stack_array address.
-    ld a0, 0(t0)		# Load link stack_array pointer.
-    beqz a0, lnk_not_inititalized
 
-    jal stack_array_alloc	# Get a new item into a1, or stack empty.
+    # Load link SA ptr.
+    ld t0, link_sa_ptr_addr
+    ld a0, 0(t0)
 
-    # Load values to instance.
+    beqz a0, lnk_not_inititalized	# Error if not initialized.
+
+    jal stack_array_alloc	# Get a new link instance into a1.
+
+    # Store values into instance.
     li t0, link_id_val		# Load the link id value.
     sw t0, link_id(a1)		# Set link ID in returned instance.
     sd s1, link_val(a1)		# Store link value prt.
@@ -137,6 +126,7 @@ list_new:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
+    # Get new, empty, link instance.
     li a0, 0
     li a1, 0
     jal link_new
@@ -148,9 +138,8 @@ list_new:
     ret
 
 # Pop a value from a list.
-#
-# In:  a0 = List (link) ptr.
-# Ret: a1 = Value ptr.
+# In:  a0 = List (first link) ptr.
+# Ret: a1 = First list value ptr.
 list_pop:
     # Configure stack.
     addi sp, sp, d4n		# Advance sp for stack frame.
@@ -172,22 +161,24 @@ list_pop:
     jal list_is_empty
     bne a1, x0, lpo_err
 
-    # Save link 0 value to return.
+    # Save link value to return.
     ld s2, link_val(s1)
 
-    # Save link 1 ptr
+    # Save link next ptr
     ld s3, link_next(s1)
 
     # Check for last link.
     beq s3, x0, lpo_last
 
-    # Move info from link 1 to link 0.
+    # Move value from next link to first link.
     ld t0, link_val(s3)
     sd t0, link_val(s1)
+
+    # Move next ptr from next link to first link.
     ld t0, link_next(s3)
     sd t0, link_next(s1)
 
-    # Dealloc link 1.
+    # Dealloc next link.
     mv a0, s3
     jal link_dealloc
 
@@ -246,24 +237,22 @@ list_push:
     # Check value ids is equal to other IDs in the list.
     ld t0, link_val(s1)		# Get first link value.
     lw t0, 0(t0)		# Get value ID.
-
     lw t1, 0(s2)		# Get value-to-push ID.
     bne t0, t1, lp_id_err	# Jump to error code.
 
-    # Get new link, a1
-    jal link_new
+    jal link_new	 # Get new link, a1
 
-    # Move first link info into the new link.
+    # Move first link value into the new link.
     ld t0, link_val(s1)
     sd t0, link_val(a1)
+
+    # Move first link next ptr into the new link.
     ld t0, link_next(s1)
     sd t0, link_next(a1)
 
-    # Make first link next point to new link.
-    sd a1, link_next(s1)
+    sd a1, link_next(s1)	# Make first link next point to new link.
 
-    # Make first link value equal new value.
-    sd s2, link_val(s1)   
+    sd s2, link_val(s1)  	# Make first link value equal new value.
 
     j lp_end
 
@@ -280,10 +269,12 @@ lp_end:
     ret
 
 lp_id_err:
-    la a0, lp_id_err_str	# Load addr of prefix string.
+    # Print prefix string.
+    la a0, lp_id_err_str
     jal prtstr
 
-    addi a0, x0, 12	# Load return code.
+    # Return with rc 12.
+    addi a0, x0, 12
     jal endprg
 
 # Deallocate a link.
@@ -295,20 +286,19 @@ link_dealloc:
     sd ra, 0(sp)                # Save ra.
 
     # Check instance ID.
-    lw t0, link_id(a0)		# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err		# Error if ne.
+    lw t0, link_id(a0)
+    li t1, link_id_val
+    bne t0, t1, lid_err
 
-    # Deallocate.
-    mv a1, a0			# Item ptr to a1.
+    mv a1, a0			# Save item to dealloacte.
 
-    ld t0, link_sa_ptr_addr	# Load link stack_array address.
+    # Load link stack_array ptr.
+    ld t0, link_sa_ptr_addr
+    ld a0, 0(t0)
 
-    ld a0, 0(t0)		# Get link stack_array pointer.
-    beqz t0, lnk_not_inititalized
+    beqz t0, lnk_not_inititalized	# Error link SA is not inititalized.
 
-    #ld a0, 0(t0)		# Get link stack_array pointer.
-    jal stack_array_dealloc	# Add instance back to link stack.
+    jal stack_array_dealloc	# Deallocate.
 
     # Restore stack.
     ld ra, 0(sp)		# Restore ra.
@@ -367,11 +357,11 @@ link_stack_print:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    ld t0, link_sa_ptr_addr	# Load link stack_array address.
+    # LOad link SA ptr.
+    ld t0, link_sa_ptr_addr
+    ld a0, 0(t0)
 
-    ld a0, 0(t0)		# Load link stack ptr.
     beqz a0, lnk_not_inititalized
-
 
     jal stack_array_print	# Print the stack.
    
@@ -391,29 +381,31 @@ link_print:
     sd ra, 0(sp)                # Save ra.
     sd s1, d1(sp)		# Save s1.
 
-    mv s1, a0			# Save a0.
+    mv s1, a0			# Save link ptr.
 
     # Check instance ID.
     lw t0, link_id(s1)       	# Load instance ID.
     li t1, link_id_val		# Load expected ID.
     bne t0, t1, lid_err         # Error if ne.
 
-    li a0, '['			# Load left bracket value.
-    jal prtchr
-
-    la a0, lp_val_str	# Load addr of prefix string.
+    # Print prfix string.
+    la a0, lp_val_str
     jal prtstr
 
+    # Print link value.
     ld a0, link_val(s1)
     jal prthex
 
-    la a0, lp_nxt_str	# Load addr of prefix string.
+    # Print next string.
+    la a0, lp_nxt_str
     jal prtstr
 
+    # Print link next value.
     ld a0, link_next(s1)
     jal prthex
 
-    li a0, ']'		# Load right bracket value.
+    # Print right bracket.
+    li a0, ']'
     jal prtchr
 
     # Restore stack.
@@ -446,15 +438,12 @@ ldl_loop_next:
 
     ld s1, link_next(s1)	# Load link next.
 
-    mv a0, s2			# Dealloc current link.
+    # Dealloc current link.
+    mv a0, s2
     jal link_dealloc
 
-    beq s1, x0, ldl_loop_end
+    bnez s1, ldl_loop_next	# Branch if another link.
 
-    j ldl_loop_next
-
-ldl_loop_end:
-    
     # Restore stack.
     ld s2, d2(sp)		# Restore s2.
     ld s1, d1(sp)		# Restore s1.
@@ -490,9 +479,9 @@ ll_loop_next:
 
     ld s1, link_next(s1)	# Load link next.
 
-    beq s1, x0, ll_end		# Exit loop in no more links.
+    bne s1, x0, ll_loop_next	# Process next link.
 
-    j ll_loop_next
+    j ll_end
 
 ll_empty:
     li a1, 0			# Load length to return.
@@ -572,7 +561,7 @@ lpo_err_str:	.asciz	"\nList_pop: empty list."
 lp_id_err_str:	.asciz	"List_push: Invalid struct ID."
 lid_err_str:    .asciz  "Invalid instance link id"
 link_str:       .asciz  "Links"
-lp_val_str:	.asciz "Value: "
+lp_val_str:	.asciz "[Link: Value: "
 lp_nxt_str:	.asciz ", Next: "
 link_init_err_str: .asciz "Link already initialized\n"
 
