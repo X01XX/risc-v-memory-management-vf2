@@ -36,6 +36,7 @@
 	.global list_is_empty
 	.global link_left
 	.global link_new
+	.global lid_err
 
 # ID to identify a link instance.
 	.equ link_id_val, 1319
@@ -313,13 +314,32 @@ lid_err:
     addi a0, x0, 13	# Load return code.
     jal endprg
 
-# Verify a ptr references a link instance, or halt.
-# In: a0 = Ptr to instance.
+# Check if a ptr references a link instance.
+# In:  a0 - Ptr to instance.
+# Ret: a0 - 1 = true, 0 = false.
 is_link:
-    lw t0, link_id(a0)	# Load instance ID val.
+
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save addr.
+
+    jal mem_within	# Avoid a segmentation error in next lw command.
+    beqz a0, il_ret
+
+    lw t0, link_id(s1)	# Load instance ID val.
     li t1, link_id_val	# Load expected ID val.
 
     bne t0, t1, lid_err
+
+il_ret:
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
+
     ret
 
 # Accessor to get link value.

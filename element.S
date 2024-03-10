@@ -258,6 +258,7 @@ element_list_print:
     # Check list arg.
     mv a0, s1			# Load link ptr
     jal is_link			# Check link id.
+    beqz a0, lid_err
 
     li a0, '('			# Print list prefix, left paren.
     jal prtchr
@@ -316,7 +317,9 @@ element_list_dealloc:
 
     # Check instance ID.
     mv a0, s1			# Get link value.
+
     jal is_link
+    beqz a0, lid_err
 
     # Check for empty list.
     mv a0, s1			# Get link value.
