@@ -119,7 +119,6 @@ after_init:
     jal prtnl
 
     jal link_stack_print
-
     jal element_stack_print
 
     # Pop, save, a value.
@@ -145,6 +144,9 @@ after_init:
     mv a0, s1		# Load list ptr.
     la a1, sep1
     jal element_list_print
+
+    #li a0, 5
+    #jal endprg
 
     jal prtnl
 

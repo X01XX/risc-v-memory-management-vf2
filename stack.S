@@ -20,11 +20,15 @@
 	.equ dbyts, 3
 
 # Struct stack.
-	.equ	stack_start,	0	# 8 bytes, 2 words. Ptr to start of stack.
-	.equ	stack_end,	8	# 8 bytes, 2 words. stack_start + (wbyts * number items)
-	.equ	stack_tos,	16	# 8 bytes, 2 words. Current Top Of Stack.
-	.equ	stack_desc,	24	# 8 bytes, 2 words. Ptr to stack name string.
-	.equ    stack_words,	8	# Number words in this struct.
+	.equ	stack_id,	0	# 4 bytes, 1 word.
+	.equ	stack_start,	4	# 8 bytes, 2 words. Ptr to start of stack.
+	.equ	stack_end,	12	# 8 bytes, 2 words. stack_start + (wbyts * number items)
+	.equ	stack_tos,	20	# 8 bytes, 2 words. Current Top Of Stack.
+	.equ	stack_desc,	28	# 8 bytes, 2 words. Ptr to stack name string.
+	.equ    stack_words,	9	# Number words in this struct.
+
+# ID to identify a stack instance.
+	.equ	stack_id_val, 1777
 
 # Global labels:
 	.global stack_new
@@ -34,15 +38,16 @@
 	.global stack_print_name
 	.global stack_contains
 	.global stack_left
+        .global is_stack
 	
 # Initialize and return a stack.
 # mem_init needs to be called from main before calling this.
 #
-# In:  a0, contains the number of words the stack will need to support.
+# In:  a0, contains the number of items the stack will need to support.
 #      a1, contains a ptr to a string that will name the stack for error messages.
 # Ret: a1, a ptr to the memory allocated for the stack (header).
 stack_new:
-    blez a0, invalid_request 	# Check for zero, or negative, number of words.
+    blez a0, stack_new_no_words_err	# Check for zero, or negative, number of words.
 
     # Configure stack.
     addi sp, sp, d4n		# Advance sp for stack frame.
@@ -59,17 +64,21 @@ stack_new:
 
     li a0, stack_words		# Load number of stack struct words.
     jal mem_alloc		# Get stack struct memory ptr into a1.
-    mv s3, a1			# Save in stack struct ptr.
+    mv s3, a1			# Save stack struct ptr.
+
+    li t0, stack_id_val		# Store stack struct id.
+    sw t0, stack_id(s3)
 
     mv a0, s1			# Load stack size.
+    slli a0, a0, 1		# Multiply to change number items into words where there are 2 words per dword address.
     jal mem_alloc		# Get stack memory ptr into a1.
 
     sd a1, stack_start(s3)	# Store stack memory ptr in stack struct.
     sd a1, stack_tos(s3)	# Store stack tos ptr in stack struct.
 
     slli t2, s1, dbyts		# Multiply number words by word size to get size in bytes.
-    add t1, a1, t2		# Add stack number bytes to stack start.
-    sd t1, stack_end(s3)	# Store end into stack struct.
+    add t2, a1, t2		# Add stack number bytes to stack start.
+    sd t2, stack_end(s3)	# Store end into stack struct.
 
     sd s2, stack_desc(s3)	# Store name ptr.
 
@@ -85,36 +94,101 @@ stack_new:
     ret				# Return a1
 
 # Display invalid request, then halt.
-invalid_request:
+stack_new_no_words_err:
     mv s3, a0		# Save number words.
 
-    la a0, invalid_str
+    la a0, stack_new_no_words_err_str
     jal prtstr
 
     mv a0, s3		# Load number words.
     jal prtdec		# Print number as base 10.
+    jal prtnl
 
-    addi a0, x0, 3	# Load return code
+    li a0, 4	# Load return code
     jal endprg
+
+stack_new_no_words_err_str:    	.asciz "Invalid number of words "
+.align 4
+
+# Check if a ptr references a stack instance.
+# In:  a0 - Ptr to instance.
+# Ret: a0 - 1 = true, 0 = false.
+is_stack:
+
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save addr.
+
+    jal mem_within	# Avoid a segmentation error in next lw command.
+    beqz a0, is_stack_ret_0
+
+    lw t0, stack_id(s1)	# Load instance ID val.
+    li t1, stack_id_val	# Load expected ID val.
+
+    bne t0, t1, is_stack_ret_0
+
+    li a0, 1
+    j is_stack_ret
+
+is_stack_ret_0:
+    li a0, 0
+
+is_stack_ret:
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
+
+    ret
 
 # Push a value onto the a stack.
 # In:  a0, ptr to a stack.
 #      a1, value to push.
 # Ret: Nothing.
 stack_push:
-    ld t0, stack_tos(a0)	# Load stack tos.
 
-    ld t1, stack_end(a0)	# Load end of stack.
+   # Configure stack
+    addi sp, sp, d3n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+    sd s2, d2(sp)	# Save s2.
+
+    mv s1, a0		# Save arg.
+    mv s2, a1		# Save arg.
+
+    jal is_stack
+    beqz a0, stack_push_arg_err
+
+    ld t0, stack_tos(s1)	# Load stack tos.
+
+    ld t1, stack_end(s1)	# Load end of stack.
 
     bgeu t0, t1, stack_full	# Check for stack full.
 
-    sd a1, 0(t0)		# Store the word.
+    sd s2, 0(t0)		# Store the word.
 
     addi t0, t0, d1		# Point to the next word.
 
-    sd t0, stack_tos(a0)	# Store the new stack ptr value.
+    sd t0, stack_tos(s1)	# Store the new stack ptr value.
+
+    # Restore stack.
+    ld s2, d2(sp)		# Restore s2.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d3		# Restore sp.
 
     ret
+
+# Print error, exit.
+stack_push_arg_err:
+    la a0, stack_push_arg_err_str
+    jal prtstr
+
+    li a0, 5
+    jal endprg
 
 # Display stack full error message, then halt.
 stack_full:
@@ -126,26 +200,54 @@ stack_full:
     la a0, sf_str
     jal prtstr
 
-    addi a0, x0, 4	# Load return code
+    li a0, 6	# Load return code
     jal endprg
+
+stack_push_arg_err_str:	.asciz	"stack_push: Arg passed is not a stack.\n"
+sf_str:			.asciz ": stack full\n"
+.align 4
 
 # Pop a value from the a stack.
 # In:  a0, ptr to a stack.
 # Ret: a1, value on stack.
 stack_pop:
-    ld t0, stack_tos(a0)	# Load stack tos.
 
-    ld t1, stack_start(a0)	# Load start of stack.
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
+    jal is_stack
+    beqz a0, stack_pop_arg_err
+
+    ld t0, stack_tos(s1)	# Load stack tos.
+
+    ld t1, stack_start(s1)	# Load start of stack.
 
     # Check for stack empty.
     bleu t0, t1, stack_empty
     
     addi t0, t0, d1n		# Point to the previous word.
-    sd t0, stack_tos(a0)	# Store the new stack ptr.
+    sd t0, stack_tos(s1)	# Store the new stack ptr.
 
     ld a1, 0(t0)		# Load the value into a1.
 
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
+
     ret				# Return a1.
+
+# Print error, exit.
+stack_pop_arg_err:
+    la a0, stack_pop_arg_err_str
+    jal prtstr
+
+    li a0, 7
+    jal endprg
 
 # Display stack empty error message, then halt.
 stack_empty:
@@ -154,12 +256,16 @@ stack_empty:
     ld a0, stack_desc(s1)
     jal prtstr
 
-    la a0, sp_empty_str
+    la a0, stack_empty_str
     jal prtstr
  
-    addi a0, x0, 5	# Load return code
+    li a0, 8	# Load return code
     jal endprg
  
+stack_pop_arg_err_str:	.asciz	"stack_pop: Arg passed is not a stack.\n"
+stack_empty_str:		.asciz ": stack empty\n"
+.align 4
+
 # Check a stack name string, ended with 0, for length and unprintable characters.
 # In:  a0 = pointer to string.
 # Ret: Nothing.
@@ -174,33 +280,37 @@ check_name:
     li t3, '~'
 
 # Loop to check each character.
-cn_loop_next:
+check_name_loop_next:
     lb t0, 0(t1) 		# Load next byte
-    beqz t0, cn_loop_done	# Done if zero char found.
+    beqz t0, check_name_loop_done	# Done if zero char found.
 
     bltu t0, t2, name_invalid_char	# Check for low invalid chacacter.
 
     bgtu t0, t3, name_invalid_char 	# Check for high invalid character.
 
     addi t1, t1, 1		# Point at next byte.
-    j cn_loop_next
+    j check_name_loop_next
 
-cn_loop_done:
+check_name_loop_done:
     ret
 
 name_too_short:
-    ld a0, cn_err1_str
+    ld a0, check_name_empty_str
     jal prtstr
 
-    addi a0, x0, 6	# Load return code
+    li a0, 9	# Load return code
     jal endprg
 
 name_invalid_char:
-    ld a0, cn_err2_str
+    ld a0, check_name_char_str
     jal prtstr
 
-    addi a0, x0, 7	# Load return code
+    li a0, 10	# Load return code
     jal endprg
+
+check_name_empty_str:		.asciz "stack_new: Empty string for stack name?"
+check_name_char_str: 		.asciz "stack_new: Invalid character in stack name?\n"
+.align 4
 
 # Print the stack name, to StdOut.
 # In:  a0 - Ptr to stack.
@@ -214,8 +324,11 @@ stack_print_name:
 
     mv s1, a0		# Save stack ptr.
 
+    jal is_stack
+    beqz a0, stack_print_name_arg_err
+
     # Print stack name prefix.
-    la a0, stack_print_prefix
+    la a0, stack_print_name_prefix
     jal prtstr
 
     # Print stack name.
@@ -227,6 +340,18 @@ stack_print_name:
     ld ra, 0(sp)		# Restore ra.
     addi sp, sp, d2		# Restore sp.
     ret
+
+# Print error, exit.
+stack_print_name_arg_err:
+    la a0, stack_print_name_arg_err_str
+    jal prtstr
+
+    li a0, 11
+    jal endprg
+
+stack_print_name_arg_err_str:	.asciz	"stack_print_name: Arg passed is not a stack.\n"
+stack_print_name_prefix:	.asciz "\nStack Name: "
+.align d2
 
 # Print a stack.
 # In:  a0, ptr to a stack struct.
@@ -242,11 +367,15 @@ stack_print:
 
     mv s1, a0		# Save stack ptr.
 
+    jal is_stack
+    beqz a0, stack_print_arg_err
+
+    mv a0, s1
     jal stack_print_name
 
     jal prtnl
 
-    la a0, stack_print_num
+    la a0, stack_print_num_str
     jal prtstr
 
     ld s2, stack_start(s1)	# Load stack start.
@@ -259,7 +388,7 @@ stack_print:
 
     jal prtnl
 
-    la a0, stack_print_items
+    la a0, stack_print_items_str
     jal prtstr
 
     ld t1, stack_start(s1)	# Load stack start.
@@ -293,6 +422,19 @@ sp_loop_end:
     addi sp, sp, d4		# Restore sp.
     ret
 
+# Print error, exit.
+stack_print_arg_err:
+    la a0, stack_print_arg_err_str
+    jal prtstr
+
+    li a0, 12
+    jal endprg
+
+stack_print_arg_err_str:	.asciz	"stack_print: Arg passed is not a stack.\n"
+stack_print_num_str:	.asciz "Max Items: "
+stack_print_items_str:	.asciz "Number Available Items: "
+.align d2
+
 # Print summary of stack usage.
 # In:  a0 - ptr to a stack instance.
 # Ret: Nothing.
@@ -306,6 +448,9 @@ stack_left:
     sd s2, d2(sp)               # Save s2.
 
     mv s1, a0		# Save stack ptr.
+
+    jal is_stack
+    beqz a0, stack_left_arg_err
 
     la a0, sl_str1	# Print Stack:
     jal prtstr
@@ -357,6 +502,22 @@ sl_skip_plural:
 
     ret
 
+# Print error, exit.
+stack_left_arg_err:
+    la a0, stack_left_arg_err_str
+    jal prtstr
+
+    li a0, 13
+    jal endprg
+
+stack_left_arg_err_str:	.asciz	"stack_left: Arg passed is not a stack.\n"
+sl_str1:		.asciz "Stack: "
+sl_str2:		.asciz ",  "
+sl_str3:		.asciz " item"
+sl_str4:		.asciz " of "
+sl_str5:		.asciz " left.\n"
+.align 4
+
 # Check a stack for a value.
 # In:  a0, ptr to a stack struct.
 #      a1, item to check for.
@@ -386,16 +547,3 @@ sca_true:
     li a1, 1			# Load a1 with true indicator.
     ret
 
-cn_err1_str:		.asciz "Empty string for stack name?"
-invalid_str:    	.asciz "Invalid number of words "
-cn_err2_str: 		.asciz "Invalid character in stack name?\n"
-stack_print_prefix:	.asciz "\nStack Name: "
-stack_print_num:	.asciz "Max Items: "
-stack_print_items:	.asciz "Number Available Items: "
-sf_str:			.asciz ": stack full\n"
-sp_empty_str:		.asciz ": stack empty\n"
-sl_str1:		.asciz "Stack: "
-sl_str2:		.asciz ",  "
-sl_str3:		.asciz " item"
-sl_str4:		.asciz " of "
-sl_str5:		.asciz " left.\n"

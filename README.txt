@@ -60,69 +60,149 @@ Memory:
 
   varies:
 
-    16 - Stack-array not initialized.
+    3 - Stack-array not initialized.
 
 Stack:
 
   stack_new:
 
-    3  - Request for zero word stack.
+    4  - Request for zero word stack.
 
   stack_push:
 
-    4  - Stack full.
+    5  - Arg passed not a stack ptr.
+
+    6  - Stack full.
 
   stack_pop:
 
-    5  - Stack empty.
+    7  - Arg passed not a stack ptr.
+
+    8  - Stack empty.
 
   check_name:
 
-    6  - Name has zero length.
+    9  - Name has zero length.
 
-    7  - Unprintable character in name. (maybe name is not ended with a zero?)
+    10 - Unprintable character in name. (maybe name is not ended with a zero?)
+
+  stack_print_name:
+
+    11 - Arg passed not a stack ptr.
+
+  stack_print
+
+    12 - Arg passed not a stack ptr.
+
+  stack_left
+
+    13 - Arg passed not a stack ptr.
+
+  stack_contains:
+
+    14 - Arg passed not a stack ptr.
 
 Stack_array:
 
   stack_array_new:
 
-    8  - Number items is zero.
+    15 - Number items is zero.
 
-    9  - Number words, per item, is zero.
+    16 - Number words, per item, is zero.
+
+  stack_array_print:
+
+    17 - Arg passed not a stack ptr.
+
+  stack_array_alloc:
+
+    18 - Arg passed not a stack ptr.
 
   stack_array_dealloc:
 
-    10 - Stack already contains address to be deallocated.
+    19 - Arg passed not a stack ptr.
+
+    20 - Stack already contains address to be deallocated.
+
+  stack_array_left:
+
+    21 - Arg passed not a stack ptr.
 
 Link:
 
   list_pop:
 
-    11 - List empty.
+    22 - Arg passed not a stack ptr.
+
+    23 - List empty.
 
   list_push:
 
-    12 - Invalid link ID.  (pushing a non-link struct, invalid address?)
+    24 - Arg passed not a stack ptr.
+
+    25 - Pushing item of a different type than is already in the list.
 
   link_dealloc:
 
-    13 - Invalid link ID.  (deallocating a non-link struct, invalid address?)
-   
+    26 - Arg passed not a stack ptr.
+
+  link_get_val:
+
+    27 - Arg passed not a stack ptr.
+
+  link_get_next:
+
+    28 - Arg passed not a stack ptr.
+
+  link_print:
+
+    29 - Arg passed not a stack ptr.
+
+  link_list_dealloc:
+
+    30 - Arg passed not a stack ptr.
+
+  list_len:
+
+    31 - Arg passed not a stack ptr.
+
   list_is_empty:
 
-    14 - List is empty, val = 0, but next is not = 0?
+    32 - Arg passed not a stack ptr.
+
+    33 - List is empty, val = 0, but next is not = 0?
 
   varies:
 
-    17 - Stack-array not initialized.
+    34 - Stack-array not initialized.
 
 Element:
 
   element_dealloc:
 
-    15 - Invalid element ID.  (pushing a non-element struct, invalid address?)
+    35 - Arg passed not a stack ptr.
+
+  element_get_name:
+
+    36 - Arg passed not a stack ptr.
+
+  element_get_atomic_number:
+
+    37 - Arg passed not a stack ptr.
+
+  element_print:
+
+    38 - Arg passed not a stack ptr.
+
+  element_list_print:
+
+    39 - Arg passed not a stack ptr.
+
+  element_list_dealloc:
+
+    40 - Arg passed not a stack ptr.
 
   varies:
 
-    18 - Stack-array not initialized.
+    41 - Stack-array not initialized.
 

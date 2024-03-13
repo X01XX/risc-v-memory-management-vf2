@@ -36,11 +36,15 @@
 	.equ wbyts, 2
 
 # Struct stack_array (sa):
-	.equ	sa_stack_ptr,   0	# 8 bytes, 2 words. Ptr to stack struct.
-	.equ 	sa_array_ptr,   8	# 8 bytes, 2 words. Ptr to array.
-	.equ	sa_num_items,  16	# 2 bytes, 1/2 word. Max number items.
-	.equ	sa_item_words, 18	# 2 bytes, 1/2 word. Number words per item.
-	.equ	sa_words, 5		# Number words in this struct.
+	.equ	sa_id,		0	# 4 bytes, 1 word.
+	.equ	sa_stack_ptr,   4	# 8 bytes, 2 words. Ptr to stack struct.
+	.equ 	sa_array_ptr,  12	# 8 bytes, 2 words. Ptr to array.
+	.equ	sa_num_items,  20	# 2 bytes, 1/2 word. Max number items.
+	.equ	sa_item_words, 22	# 2 bytes, 1/2 word. Number words per item.
+	.equ	sa_words, 6		# Number words in this struct.
+
+# ID to identify a stack_array instance.
+	.equ	stack_array_id_val, 1553
 
 # Global labels:
 	.global stack_array_new
@@ -81,6 +85,10 @@ stack_array_new:
     li	a0, sa_words	# Load number words in SA struct.
     jal mem_alloc	# Get ptr to array into a1.
     mv s7, a1		# Save sa struct ptr.
+
+    # Set struct ID.
+    li t0, stack_array_id_val
+    sw t0, sa_id(s7)
 
     # Add number items to struct.
     sh s1, sa_num_items(s7)
@@ -149,7 +157,7 @@ invalid_num_items:
     la a0, invalid_num_items_str
     jal prtstr
 
-    addi a0, x0, 8	# Load return code.
+    li a0, 15	# Load return code.
     jal endprg
 
 # Display invalid request, then halt.
@@ -157,8 +165,46 @@ invalid_num_words:
     la a0, invalid_num_words_str
     jal prtstr
 
-    addi a0, x0, 9	# Load return code.
+    li a0, 16	# Load return code.
     jal endprg
+
+invalid_num_words_str:     .asciz "stack_array_new: Invalid number of words"
+invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"
+.align 4
+
+# Check if a ptr references a stack instance.
+# In:  a0 - Ptr to instance.
+# Ret: a0 - 1 = true, 0 = false.
+is_stack_array:
+
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save addr.
+
+    jal mem_within	# Avoid a segmentation error in next lw command.
+    beqz a0, is_stack_array_ret_0
+
+    lw t0, sa_id(s1)		# Load instance ID val.
+    li t1, stack_array_id_val	# Load expected ID val.
+
+    bne t0, t1, is_stack_array_ret_0
+
+    li a0, 1
+    j is_stack_array_ret
+
+is_stack_array_ret_0:
+    li a0, 0
+
+is_stack_array_ret:
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
+
+    ret
 
 # Print a stack_array.
 # In:  a0 - stack_array ptr.
@@ -170,6 +216,9 @@ stack_array_print:
     sd s1, d1(sp)	# Save s1.
 
     mv s1, a0		# sa struct adr to s1.
+
+    jal is_stack_array
+    beqz a0, stack_array_print_arg_err
 
     # Print stack_array address prefix.
     la a0, sa_adr_str	# Load addr of prefix string.
@@ -208,25 +257,56 @@ stack_array_print:
 
     ret
 
+stack_array_print_arg_err:
+    la a0, stack_array_print_arg_err_str
+    jal prtstr
+
+    li a0, 17
+    jal endprg
+
+stk_adr_str:	.asciz "\nStack addr: "
+ary_adr_str:	.asciz "Array addr: "
+sa_adr_str:	.asciz "\nStack_Array addr: "
+stack_array_print_arg_err_str:	.asciz	"stack_array_print: Arg passed is not a stack array.\n"
+.align 4
+
 # Get an address of an array item from the stack.
 # In:  a0 - stack_array instance ptr.
 # Ret: a1 - item pointer.
 stack_array_alloc:
-    # Configure stack.
-    addi sp, sp, d1n	# Advance sp for stack frame.
+
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
     sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
+    jal is_stack_array
+    beqz a0, stack_array_alloc_arg_err
 
     # Load stack_address.
-    ld a0, sa_stack_ptr(a0)
+    ld a0, sa_stack_ptr(s1)
 
     # Get item from stack.  Stack may be empty, causing a halt.
     jal stack_pop
 
-    # Cleanup stack.
-    ld ra, 0(sp)	# Restore ra.
-    addi sp, sp, d1	# Restore sp.
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
 
     ret
+
+stack_array_alloc_arg_err:
+    la a0, stack_array_alloc_arg_err_str
+    jal prtstr
+
+    li a0, 18
+    jal endprg
+
+stack_array_alloc_arg_err_str:	.asciz	"stack_array_alloc: Arg passed is not a stack array.\n"
+.align 4
 
 # Return an address of an array item to the stack.
 # In:  a0 - stack_array instance ptr.
@@ -242,6 +322,9 @@ stack_array_dealloc:
 
     mv s1, a0		# sa struct adr to s1.
     mv s2, a1		# sa item adr to s2.
+
+    jal is_stack_array
+    beqz a0, stack_array_dealloc_arg_err
 
 .ifdef check_for_dups
     # Check address is not already in the stack.
@@ -288,31 +371,51 @@ sad_err:
     la a0, sca_err_str
     jal prtstr
 
-    addi a0, x0, 10	# Load return code
+    li a0, 20	# Load return code
     jal endprg
+
+stack_array_dealloc_arg_err:
+    la a0, stack_array_dealloc_arg_err_str
+    jal prtstr
+
+    li a0, 19
+    jal endprg
+
+sca_err_str:	.asciz "stack_array_dealloc: Item already in stack\n"
+stack_array_dealloc_arg_err_str:	.asciz	"stack_array_dealloc: Arg passed is not a stack array.\n"
+.align 4
 
 # Print a summary of stack_array usage.
 # In: a0  - Ptr to a stack_array instance.
 # Ret: Nothing.
 # Out: Text to StdOut.
 stack_array_left:
-    # Configure stack.
-    addi sp, sp, d1n	# Advance sp for stack frame.
-    sd ra, 0(sp)	# Save ra.
 
-    ld a0, sa_stack_ptr(a0)	# Get stack addr.
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
+    jal is_stack_array
+    beqz a0, stack_array_left_arg_err
+
+    ld a0, sa_stack_ptr(s1)	# Get stack addr.
     jal stack_left
 
-    # Cleanup stack.
-    ld ra, 0(sp)	# Restore ra.
-    addi sp, sp, d1	# Restore sp.
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
 
     ret
 
-invalid_num_words_str:     .asciz "stack_array_new: Invalid number of words"
-invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"
-sca_err_str:	.asciz " Item already in stack\n"
-in_sa_print:	.asciz "\nIn sa print\n"
-stk_adr_str:	.asciz "\nStack addr: "
-ary_adr_str:	.asciz "Array addr: "
-sa_adr_str:	.asciz "\nStack_Array addr: "
+stack_array_left_arg_err:
+    la a0, stack_array_left_arg_err_str
+    jal prtstr
+
+    li a0, 21
+    jal endprg
+
+stack_array_left_arg_err_str:	.asciz	"stack_array_left: Arg passed is not a stack array.\n"

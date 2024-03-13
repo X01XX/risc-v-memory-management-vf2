@@ -44,9 +44,10 @@ element_init:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    la t1, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    ld t1, 0(t1)
+    ld t1, 0(t1)		# Check for previous inititalization.
 
-    ld t1, 0(t0)		# Check for previous inititalization.
     bnez t1, element_init_err
 
     li a1, element_words	# Load number words per item.
@@ -54,7 +55,8 @@ element_init:
     jal stack_array_new		# sa struct adr to a1
 
     # Save element sa ptr.
-    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    ld t0, 0(t0)
 
     sd a1, 0(t0)
 
@@ -70,6 +72,10 @@ element_init_ret:
     addi sp, sp, d1             # Restore sp.
 
     ret
+
+element_str:       .asciz  "Element"
+element_init_err_str: .asciz "Element already inititalized\n"
+.align 4
 
 # Return a new element.
 # In:  a0 = Ptr to name string.
@@ -87,10 +93,11 @@ element_new:
     mv s2, a1			# Save atomic number to s2.
 
     # Allocate a new element instance, or stack empty.
-    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-
+    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    ld t0, 0(t0)		# Get element stack_array pointer addr.
     ld a0, 0(t0)		# Get element stack_array pointer.
-    beqz a0, ele_not_inititalized
+
+    beqz a0, element_sa_not_inititalized_err
     jal stack_array_alloc	# Get a new item into a1, or stack empty.
 
     # Load values into element instance.
@@ -111,70 +118,147 @@ element_new:
 # In: a0 is a pointer to an element instance.
 # Ret: Nothing.
 element_dealloc:
-    # Configure stack.
-    addi sp, sp, d1n		# Advance sp for stack frame.
-    sd ra, 0(sp)                # Save ra.
+
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
 
     # Check instance ID.
-    lw t0, element_id(a0)	# Load instance ID.
-    li t1, element_id_val	# Load expected ID.
-    bne t0, t1, eid_err		# Error if ne.
+    jal is_element
+    beqz a0, element_dealloc_err	# Error if not an element.
 
     # Deallocate.
-    mv a1, a0			# Item ptr to a1.
-    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-
+    mv a1, s1			# Item ptr to a1.
+    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    ld t0, 0(t0)		# Get element stack_array pointer addr.
     ld a0, 0(t0)		# Get element stack_array pointer.
-    beqz a0, ele_not_inititalized
+
+    beqz a0, element_sa_not_inititalized_err
+
     jal stack_array_dealloc	# Add instance back to element stack.
 
     # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
     ld ra, 0(sp)		# Restore ra.
-    addi sp, sp, d1             # Restore sp.
+    addi sp, sp, d2		# Restore sp.
 
     ret
 
-eid_err:
-    la a0, eid_err_str
+element_dealloc_err:
+    la a0, element_dealloc_err_str
     jal prtstr			# Print error string.
 
-    addi a0, x0, 15		# Load return code.
+    addi a0, x0, 35		# Load return code.
     jal endprg
+
+element_dealloc_err_str:	.asciz  "element_dealloc: Arg passed is not an element.\n"
+.align 4
 
 # Verify a ptr references a element instance, or halt.
 # In: a0 = Ptr to instance.
+# Ret: a0 - 1 = true, 0 = false.
 is_element:
-    lw t0, element_id(a0)  # Load instance ID val.
-    li t1, element_id_val  # Load expected ID val.
 
-    bne t0, t1, eid_err
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
+    jal mem_within	# Check if in local memory.
+    beqz a0, is_element_ret_false
+
+    lw t0, element_id(s1)  # Load instance ID val.
+    li t1, element_id_val  # Load expected ID val.
+    bne t0, t1, is_element_ret_false
+
+    li a0, 1
+    j is_element_ret 
+
+is_element_ret_false:
+    li a0, 0
+    li a0, 0
+
+is_element_ret:
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
+
     ret
 
 # Accessor to get element name.
 # In:  a0 = ptr to element instance.
 # Ret: a1 = element name.
 element_get_name:
+
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
     # Check instance ID.
-    lw t0, element_id(a0)       # Load instance ID.
-    li t1, element_id_val       # Load expected ID.
-    bne t0, t1, eid_err		# Error if ne.
+    jal is_element
+    beqz a0, element_get_name_arg_err		# Error if not an element.
 
-    ld a1, element_name(a0)     # Load element next to return.
+    ld a1, element_name(s1)     # Load element next to return.
 
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
     ret
+
+element_get_name_arg_err:
+    la a0, element_get_name_arg_err_str
+    jal prtstr			# Print error string.
+
+    li a0, 36		# Load return code.
+    jal endprg
+
+element_get_name_arg_err_str:	.asciz  "element_get_name: Arg passed is not an element.\n"
+.align 4
 
 # Accessor to get element atomic_number.
 # In:  a0 = ptr to element instance.
 # Ret: a1 = element atomic_number.
 element_get_atomic_number:
-    # Check instance ID.
-    lw t0, element_id(a0)       # Load instance ID.
-    li t1, element_id_val       # Load expected ID.
-    bne t0, t1, eid_err		# Error if ne.
 
-    lw a1, element_atomic_number(a0)     # Load element next to return.
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
+    # Check instance ID.
+    jal is_element
+    beqz a0, element_get_atomic_number_arg_err		# Error if not an element.
+
+    lw a1, element_atomic_number(s1)     # Load element next to return.
+
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
 
     ret
+
+element_get_atomic_number_arg_err:
+    la a0, element_get_atomic_number_arg_err_str
+    jal prtstr			# Print error string.
+
+    li a0, 37		# Load return code.
+    jal endprg
+
+element_get_atomic_number_arg_err_str:	.asciz  "element_get_atomic_number: Arg passed is not an element.\n"
+.align 4
 
 # Print the element stack.
 # In:  Nothing.
@@ -185,10 +269,11 @@ element_stack_print:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-
+    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    ld t0, 0(t0)		# Load element stack ptr addr.
     ld a0, 0(t0)		# Load element stack ptr.
-    beqz a0, ele_not_inititalized
+
+    beqz a0, element_sa_not_inititalized_err
 
     jal stack_array_print	# Print the stack.
    
@@ -211,9 +296,8 @@ element_print:
     mv s1, a0			# Save a0.
 
     # Check instance ID.
-    lw t0, element_id(a0)	# Load instance ID.
-    li t1, element_id_val	# Load expected ID.
-    bne t0, t1, eid_err		# Error if ne.
+    jal is_element
+    beqz a0, element_print_arg_err	# Error if not an element.
 
     li a0, '['
     jal prtchr
@@ -240,6 +324,18 @@ element_print:
 
     ret
 
+element_print_arg_err:
+    la a0, element_print_arg_err_str
+    jal prtstr			# Print error string.
+
+    li a0, 38		# Load return code.
+    jal endprg
+
+element_print_arg_err_str:	.asciz  "element_print: Arg passed is not an element.\n"
+el_name_str:	.asciz "Name: "
+el_an_str:	.asciz ", AN: "
+.align 4
+
 # Print an element linked list.
 # In: a0 = ptr to a link.
 #     a1 = ptr to a string to use as a separator.
@@ -258,7 +354,7 @@ element_list_print:
     # Check list arg.
     mv a0, s1			# Load link ptr
     jal is_link			# Check link id.
-    beqz a0, lid_err
+    beqz a0, element_list_print_arg_err
 
     li a0, '('			# Print list prefix, left paren.
     jal prtchr
@@ -302,6 +398,16 @@ epl_loop_end:
 
     ret
 
+element_list_print_arg_err:
+    la a0, element_list_print_arg_err_str
+    jal prtstr
+
+    li a0, 39
+    jal endprg
+
+element_list_print_arg_err_str:	.asciz "element_list_print: Arg passed is not a link.\n"
+.align 4
+
 # Deallocate a element list.
 # In: a0 = link instance ptr.
 element_list_dealloc:
@@ -319,7 +425,7 @@ element_list_dealloc:
     mv a0, s1			# Get link value.
 
     jal is_link
-    beqz a0, lid_err
+    beqz a0, element_list_dealloc_arg_err
 
     # Check for empty list.
     mv a0, s1			# Get link value.
@@ -330,11 +436,6 @@ edl_loop_next:
     mv a0, s1
     jal link_get_val		# Get element ptr in a1.
 
-    # Check element ID.
-    lw t0, element_id(a1)
-    li t1, element_id_val
-    bne t1, t0, eid_err
-    
     # Deallocate the element.
     mv a0, a1
     jal element_dealloc
@@ -361,14 +462,26 @@ edl_loop_end:
 
     ret
 
-# Print inititalization error and exit.
-ele_not_inititalized:
-    la a0, ele_str
+element_list_dealloc_arg_err:
+    la a0, element_list_dealloc_arg_err_str
     jal prtstr
 
-    li a0, 18
+    li a0, 40
     jal endprg
 
+element_list_dealloc_arg_err_str:	.asciz	"element_list_dealloc: Arg passed is not a list.\n"
+.align 4
+
+# Print inititalization error and exit.
+element_sa_not_inititalized_err:
+    la a0, element_sa_not_inititalized_err_str
+    jal prtstr
+
+    li a0, 41
+    jal endprg
+
+element_sa_not_inititalized_err_str: 	.asciz "Element stack-array not initialized\n"
+.align 4
 
 # Print a summary of memory usage.
 # In:  Nothing.
@@ -379,8 +492,8 @@ element_left:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save ra.
 
-    ld t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-
+    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    ld t0, 0(t0)	# Load ptr to element stack_array addr.
     ld a0, 0(t0)	# Load ptr to element stack_array.
 
     jal stack_array_left
@@ -390,16 +503,6 @@ element_left:
     addi sp, sp, d1	# Restore sp.
 
     ret
-
-ele_str: 	.asciz "Element stack-array not initialized\n"
-
-# Name for element stack_array instance.
-element_str:       .asciz  "Element"
-
-el_name_str:	.asciz "Name: "
-el_an_str:	.asciz ", AN: "
-eid_err_str:	.asciz  "Invalid instance element id"
-element_init_err_str: .asciz "Element already inititalized\n"
 
 element_sa_ptr_addr:   .dword element_sa_ptr
 

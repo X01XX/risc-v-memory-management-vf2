@@ -8,12 +8,14 @@
 .text
 
 # Set available memory.
-	.equ number_bytes, 4000
+	.equ number_bytes, 8000
 
 # Doubleword sizes:
-	.equ d1, 8
+	.equ d1,  8
+	.equ d2, 16 
 	
-	.equ d1n, -8
+	.equ d1n,  -8
+	.equ d2n, -16
 
 # Shift number bits to convert between words and bytes.
 	.equ wbyts, 2
@@ -33,12 +35,14 @@ mem_init:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save ra.
 
-    ld t1, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
+    la t1, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
+    ld t1, 0(t1)
 
     ld t0, 0(t1)	# Check for previous inititalization.
     bnez t0, mem_init_err
 
-    ld t0, mem_start_addr	# Load ptr to memory block.
+    la t0, mem_start_addr	# Load ptr to memory block.
+    ld t0, 0(t0)
 
     sd t0, 0(t1)	# Store ptr to memory block.
     j mem_init_ret
@@ -54,13 +58,17 @@ mem_init_ret:
 
     ret
 
+mem_init_err_str: .asciz "mem_init: Memory already initialized\n"
+.align 4
+
 # Allocate a block of memory.
 # In:  a0 = number words needed.
 # Ret: a1 = Address of memory block.
 mem_alloc:
     blez a0, invalid_request	# Check for zero, or negative, memory request.
 
-    ld t0, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
+    la t0, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
+    ld t0, 0(t0)
 
     ld a1, 0(t0)	# Get free block pointer, for return.
     beqz a1, mem_not_inititalized
@@ -68,7 +76,8 @@ mem_alloc:
     slli t1, a0, wbyts	# Multiply word number by number bytes per word.
     add t1, a1, t1	# Increment memory pointer to new free block start.
 
-    ld t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
+    la t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
+    ld t2, 0(t2)
 
     bltu t2, t1, out_of_memory
 
@@ -82,7 +91,7 @@ invalid_request:
     la a0, invalid_str	# Load addr of string.
     jal prtstr
     
-    addi a0, x0, 1	# Load return code
+    li a0, 1	# Load return code
     jal endprg
     
 # Display out of memory error, then halt.
@@ -90,8 +99,12 @@ out_of_memory:
     la a0, out_str	# Load addr of string.
     jal prtstr
     
-    add	a0, x0, 2	# Load return code
+    li	a0, 2	# Load return code
     jal endprg
+
+out_str:	.asciz "mem_alloc: Out of memory\n"
+invalid_str:	.asciz "mem_alloc: Invalid memory request\n"
+.align 4
 
 # Print the amount of memory that is left, to StdOut.
 # In:  Nothing.
@@ -106,12 +119,14 @@ mem_left:
     jal prtstr
 
     # Get pointer to next free block.
-    ld t0, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
+    la t0, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
+    ld t0, 0(t0)
 
     ld t1, 0(t0)
     beqz t1, mem_not_inititalized
 
-    ld t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
+    la t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
+    ld t2, 0(t2)
 
     sub t3, t2, t1	# Get difference, in bytes.
     srli t3, t3, wbyts	# Convert to words.
@@ -122,9 +137,11 @@ mem_left:
     la a0, mem_left_str2	# Load addr of string.
     jal prtstr
     
-    ld t0, mem_start_addr	# Load ptr to memory block.
+    la t0, mem_start_addr	# Load ptr to memory block.
+    ld t0, 0(t0)
 
-    ld t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
+    la t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
+    ld t2, 0(t2)
 
     sub t3, t2, t0	# Get difference, in bytes.
     srli t3, t3, wbyts	# Convert to words.
@@ -141,42 +158,42 @@ mem_left:
 
     ret
 
+mem_left_str1:	.asciz	"Allocate-only memory: "
+mem_left_str2:	.asciz	" Words of "
+mem_left_str3:	.asciz	" left.\n"
+.align 4
+
 # Print inititalization error and exit.
 mem_not_inititalized:
     la a0, mni_str
     jal prtstr
 
-    li a0, 16
+    li a0, 3
     jal endprg
+
+mni_str: 	.asciz "Memory not initialized\n"
+.align 4
 
 # Return true if a given address is within memory.
 # In:  a0 - Address.
 # Ret: a0 - 1 = true, 0 = false.
 mem_within:
-    ld t0, mem_start_addr
+    la t0, mem_start_addr
     ld t0, 0(t0)
+
     blt a0, t0, wm_ret_false
 
-    ld t0, mem_end_addr
+    la t0, mem_end_addr
     ld t0, 0(t0)
-    bgt a0, t0, wm_ret_false
+
+    bgt a0, t0, wm_ret_false	
 
     li a0, 1
-    j wm_ret
-
-wm_ret_false:
-    mv a0, x0
-
-wm_ret:
     ret
 
-mni_str: 	.asciz "Memory not initialized\n"
-invalid_str:	.asciz "Invalid memory request\n"
-out_str:	.asciz "Out of memory\n"
-mem_left_str1:	.asciz	"Allocate-only memory: "
-mem_left_str2:	.asciz	" Words of "
-mem_left_str3:	.asciz	" left.\n"
-mem_init_err_str: .asciz "Memory already initialized\n"
+wm_ret_false:
+    li a0, 0
+    ret
 
 mem_ptr_addr:	.dword mem_ptr
 mem_start_addr:	.dword mem_start
@@ -185,10 +202,9 @@ mem_end_addr:	.dword mem_end
 .data
 
 # Pointer to the next free memory block.
-.align d1
 mem_ptr:	 .dword 0
 
 # Start, and end of free memory allocation.
 mem_start:		.zero number_bytes
-mem_end:
+mem_end:		.zero 1
 

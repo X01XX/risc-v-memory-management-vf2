@@ -186,7 +186,8 @@ prtchr:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    ld a1, char_addr		# Get char buffer address.
+    la a1, char_addr		# Get char buffer address.
+    ld a1, 0(a1)
 
     sb a0, 0(a1)
      			# Load addr of character

@@ -21,6 +21,9 @@
         .equ link_val,  12	# 8 bytes, 2 words. Ptr to value, or zero in empty list.
         .equ link_words, 5
 
+# ID to identify a link instance.
+	.equ link_id_val, 1319
+
 #  Global labels:
 	.global link_init
 	.global link_stack_print
@@ -36,10 +39,6 @@
 	.global list_is_empty
 	.global link_left
 	.global link_new
-	.global lid_err
-
-# ID to identify a link instance.
-	.equ link_id_val, 1319
 
 # Initialize link storage.
 # mem_init needs to be called from main before calling this.
@@ -51,9 +50,11 @@ link_init:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)        # Save ra.
 
-    # Load link stack-array ptr.
-    ld t1, link_sa_ptr_addr
+    # Load link_sa_ptr_addr.
+    la t1, link_sa_ptr_addr
     ld t1, 0(t1)
+
+    ld t1, 0(t1)		# Get link_sa_ptr.
 
     bnez t1, link_init_err	# Branch if evidence of previous inititalization.
 
@@ -63,12 +64,15 @@ link_init:
 
     jal stack_array_new # sa struct adr to a1
 
-    # Save link sa ptr.
-    ld t0, link_sa_ptr_addr	# Load link stack_array address.
-    sd a1, 0(t0)
+    # Load link_sa_ptr_addr.
+    la t0, link_sa_ptr_addr
+    ld t0, 0(t0)
+
+    sd a1, 0(t0)		# Store stack_array address.
 
     j link_init_ret
 
+# Print error, but continue.
 link_init_err:
     la a0, link_init_err_str
     jal prtstr
@@ -79,6 +83,10 @@ link_init_ret:
     addi sp, sp, d1     # Restore sp.
 
     ret
+
+link_str:		.asciz  "Links"
+link_init_err_str:	.asciz "Link already initialized\n"
+.align 4
 
 # Return a new link.
 # In:  a0 = Link value.
@@ -97,11 +105,13 @@ link_new:
 
     # Allocate a new link instance, or stack empty.
 
-    # Load link SA ptr.
-    ld t0, link_sa_ptr_addr
-    ld a0, 0(t0)
+    # Load link SA ptr addr.
+    la t0, link_sa_ptr_addr
+    ld t0, 0(t0)
 
-    beqz a0, lnk_not_inititalized	# Error if not initialized.
+    ld a0, 0(t0)	# Load link_sa_ptr
+
+    beqz a0, link_sa_not_inititalized	# Error if not initialized.
 
     jal stack_array_alloc	# Get a new link instance into a1.
 
@@ -152,15 +162,14 @@ list_pop:
     # Save arg.
     mv s1, a0			# Save link ptr.
 
-    # Check instance ID.
-    lw t0, link_id(s1)       	# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err         # Error if ne.
+    # Check arg a0.
+    jal is_link
+    beqz a0, list_pop_arg_err         # Error if not a link.
 
     # Check if empty list.
     mv a0, s1
     jal list_is_empty
-    bne a1, x0, lpo_err
+    bne a1, x0, list_pop_empty_err
 
     # Save link value to return.
     ld s2, link_val(s1)
@@ -169,7 +178,7 @@ list_pop:
     ld s3, link_next(s1)
 
     # Check for last link.
-    beq s3, x0, lpo_last
+    beq s3, x0, list_pop_last
 
     # Move value from next link to first link.
     ld t0, link_val(s3)
@@ -183,12 +192,12 @@ list_pop:
     mv a0, s3
     jal link_dealloc
 
-    j lpo_end
+    j list_pop_end
 
-lpo_last:
+list_pop_last:
     sd x0, link_val(s1)		# Change first link to empty list, link_next already 0.
     
-lpo_end:
+list_pop_end:
     # Load value to return.
     mv a1, s2
 
@@ -200,13 +209,26 @@ lpo_end:
     addi sp, sp, d4             # Restore sp.
 
     ret
-    
-lpo_err:
-    la a0, lpo_err_str	# Load addr of prefix string.
+ 
+# Print argument error, exit.
+list_pop_arg_err:
+    la a0, list_pop_arg_err_str
     jal prtstr
 
-    addi a0, x0, 11	# Load return code.
+    li a0, 22	# Load return code.
     jal endprg
+
+# Print empty list error, exit.
+list_pop_empty_err:
+    la a0, list_pop_empty_err_str
+    jal prtstr
+
+    li a0, 23	# Load return code.
+    jal endprg
+
+list_pop_arg_err_str:	.asciz	"list_pop: Arg passed is not a link.\n"
+list_pop_empty_err_str:	.asciz	"list_pop: empty list.\n"
+.align 4
 
 # Push a value onto a list of structs, sharing the same ID value.
 # In:  a0 = a link ptr.
@@ -224,14 +246,14 @@ list_push:
     mv s2, a1			# Save value ptr.
 
     # Check instance ID.
-    lw t0, link_id(s1)       	# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err         # Error if ne.
+    mv a0, s1
+    jal is_link
+    beqz a0, list_push_arg_err	# Error if not a link instance.
 
     # Check for empty list.
     mv a0, s1
     jal list_is_empty
-    bne a1, x0, lp_empty_list
+    bne a1, x0, list_push_empty_list
     
     # List is not empty.
 
@@ -239,9 +261,9 @@ list_push:
     ld t0, link_val(s1)		# Get first link value.
     lw t0, 0(t0)		# Get value ID.
     lw t1, 0(s2)		# Get value-to-push ID.
-    bne t0, t1, lp_id_err	# Jump to error code.
+    bne t0, t1, list_push_type_err	# Jump if instances not eq.
 
-    jal link_new	 # Get new link, a1
+    jal link_new	 # Get new link, to a1.
 
     # Move first link value into the new link.
     ld t0, link_val(s1)
@@ -255,12 +277,12 @@ list_push:
 
     sd s2, link_val(s1)  	# Make first link value equal new value.
 
-    j lp_end
+    j list_push_end
 
-lp_empty_list:
+list_push_empty_list:
     sd s2, link_val(s1)		# Store value in first link.
 
-lp_end:
+list_push_end:
     # Restore stack.
     ld s2, d2(sp)		# Restore s2.
     ld s1, d1(sp)		# Restore s1.
@@ -269,50 +291,72 @@ lp_end:
 
     ret
 
-lp_id_err:
-    # Print prefix string.
-    la a0, lp_id_err_str
+# Print arg error, exit.
+list_push_arg_err:
+    la a0, list_push_arg_err_str
     jal prtstr
 
-    # Return with rc 12.
-    addi a0, x0, 12
+    li a0, 24
     jal endprg
 
+# Print arg error, exit.
+list_push_type_err:
+    la a0, list_push_type_err_str
+    jal prtstr
+
+    li a0, 25
+    jal endprg
+
+list_push_arg_err_str:	.asciz	"list_push: Arg passed is not a link.\n"
+list_push_type_err_str:	.asciz	"list_push: Value passed is different than other items.\n"
+.align 4
+
+# Deallocate a link.
 # Deallocate a link.
 # In: a0 contains a pointer to a link instance.
 # Ret: Nothing.
 link_dealloc:
-    # Configure stack.
-    addi sp, sp, d1n		# Advance sp for stack frame.
-    sd ra, 0(sp)                # Save ra.
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
 
-    # Check instance ID.
-    lw t0, link_id(a0)
-    li t1, link_id_val
-    bne t0, t1, lid_err
+    mv s1, a0		# Save arg ptr.
 
-    mv a1, a0			# Save item to dealloacte.
+    # Check arg.
+    jal is_link
+    beqz a0, list_dealloc_arg_err
 
-    # Load link stack_array ptr.
-    ld t0, link_sa_ptr_addr
-    ld a0, 0(t0)
+    mv a1, s1			# Save item to dealloacte.
 
-    beqz t0, lnk_not_inititalized	# Error link SA is not inititalized.
+    # Load link_sa_ptr_addr.
+    la t0, link_sa_ptr_addr
+    ld t0, 0(t0)
+
+    ld a0, 0(t0)		# Load link_sa_ptr.
+
+    beqz a0, link_sa_not_inititalized	# Error link SA is not inititalized.
 
     jal stack_array_dealloc	# Deallocate.
 
     # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
     ld ra, 0(sp)		# Restore ra.
-    addi sp, sp, d1             # Restore sp.
+    addi sp, sp, d2		# Restore sp.
 
     ret
 
-lid_err:
-    la a0, lid_err_str	# Load addr of prefix string.
+.align 4
+# Print error string, exit.
+list_dealloc_arg_err:
+    la a0, list_dealloc_arg_err_str
     jal prtstr
 
-    addi a0, x0, 13	# Load return code.
+    li a0, 26
     jal endprg
+
+list_dealloc_arg_err_str:	.asciz	"\nlist_dealloc: Arg passed is not a link.\n"
+.align 4
 
 # Check if a ptr references a link instance.
 # In:  a0 - Ptr to instance.
@@ -327,14 +371,20 @@ is_link:
     mv s1, a0		# Save addr.
 
     jal mem_within	# Avoid a segmentation error in next lw command.
-    beqz a0, il_ret
+    beqz a0, is_link_ret_0
 
     lw t0, link_id(s1)	# Load instance ID val.
     li t1, link_id_val	# Load expected ID val.
 
-    bne t0, t1, lid_err
+    bne t0, t1, is_link_ret_0
 
-il_ret:
+    li a0, 1
+    j is_link_ret
+
+is_link_ret_0:
+    li a0, 0
+
+is_link_ret:
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
     ld ra, 0(sp)		# Restore ra.
@@ -346,27 +396,71 @@ il_ret:
 # In:  a0 = ptr to link instance.
 # Ret: a1 = link value.
 link_get_val:
+
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
     # Check instance ID.
-    lw t0, link_id(a0)       	# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err         # Error if ne.
+    jal is_link
+    beqz a0, link_get_val_arg_err	# Branch if arg is not a link.
 
-    ld a1, link_val(a0)		# Load link value to return.
+    ld a1, link_val(s1)		# Load link value to return.
 
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
     ret
+
+# Print error, exit.
+link_get_val_arg_err:
+    la a0, link_get_val_arg_err_str
+    jal prtstr
+
+    li a0, 27
+    jal endprg
+
+link_get_val_arg_err_str:	.asciz	"link_get_val: Arg passed is not a link.\n"
+.align 4
 
 # Accessor to get link next.
 # In:  a0 = ptr to link instance.
 # Ret: a1 = link next.
 link_get_next:
+
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
     # Check instance ID.
-    lw t0, link_id(a0)       	# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err         # Error if ne.
+    jal is_link
+    beqz a0, link_get_next_arg_err	# Branch if not link.
 
-    ld a1, link_next(a0)	# Load link next to return.
+    ld a1, link_next(s1)	# Load link next to return.
 
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
     ret
+
+# Print error, exit.
+link_get_next_arg_err:
+    la a0, link_get_next_arg_err_str
+    jal prtstr
+
+    li a0, 28
+    jal endprg
+
+link_get_next_arg_err_str:	.asciz	"\nlink_get_next: Arg passed is not a link.\n"
+.align 4
 
 # Print the link stack.
 # In:  Nothing.
@@ -377,11 +471,13 @@ link_stack_print:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    # LOad link SA ptr.
-    ld t0, link_sa_ptr_addr
-    ld a0, 0(t0)
+    # Load link_sa_ptr_addr.
+    la t0, link_sa_ptr_addr
+    ld t0, 0(t0)
 
-    beqz a0, lnk_not_inititalized
+    ld a0, 0(t0)		# Load link_sa_ptr.
+
+    beqz a0, link_sa_not_inititalized
 
     jal stack_array_print	# Print the stack.
    
@@ -404,12 +500,11 @@ link_print:
     mv s1, a0			# Save link ptr.
 
     # Check instance ID.
-    lw t0, link_id(s1)       	# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err         # Error if ne.
+    jal is_link
+    beqz a0, link_print_arg_err	# Branch if not link.
 
     # Print prfix string.
-    la a0, lp_val_str
+    la a0, link_print_val_str
     jal prtstr
 
     # Print link value.
@@ -417,7 +512,7 @@ link_print:
     jal prthex
 
     # Print next string.
-    la a0, lp_nxt_str
+    la a0, link_print_nxt_str
     jal prtstr
 
     # Print link next value.
@@ -435,6 +530,19 @@ link_print:
 
     ret
 
+# Print error, exit.
+link_print_arg_err:
+    la a0, link_print_arg_err_str
+    jal prtstr
+
+    li a0, 29
+    jal endprg
+
+link_print_val_str:	.asciz "[Link: Value: "
+link_print_nxt_str:	.asciz ", Next: "
+link_print_arg_err_str:		.asciz	"\nlink_print: Arg passed is not a link.\n"
+.align 4
+
 # Deallocate a linked list.
 # Clear values from the list before calling this.
 # In: a0 = ptr to a link instance.
@@ -449,9 +557,8 @@ link_list_dealloc:
     mv s1, a0			# Save link ptr.
 
     # Check instance ID.
-    lw t0, link_id(s1)       	# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err         # Error if ne.
+    jal is_link
+    beqz a0, link_list_dealloc_arg_err	# Error if not link.
 
 ldl_loop_next:
     mv s2, s1			# Save current link ptr.
@@ -472,6 +579,17 @@ ldl_loop_next:
 
     ret
 
+# Print error, exit.
+link_list_dealloc_arg_err:
+    la a0, link_list_dealloc_arg_err_str
+    jal prtstr
+
+    li a0, 30
+    jal endprg
+
+link_list_dealloc_arg_err_str:	.asciz	"list_list_dealloc: Arg passed is not a link.\n"
+.align 4
+
 # Return the length of a list.
 # In:  a0 = ptr to a link instance.
 # Ret: a1 = list length.
@@ -481,32 +599,32 @@ list_len:
     sd ra, 0(sp)                # Save ra.
     sd s1, d1(sp)		# Save s1.
 
-    # Check instance ID.
-    lw t0, link_id(a0)       	# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err         # Error if ne.
-
     mv s1, a0			# Save link ptr.
 
+    # Check instance ID.
+    jal is_link
+    beqz a0, list_len_arg_err	# Error if not a linknot a link.
+
     # Check for empty list.
+    mv a0, s1
     jal list_is_empty
-    bne a1, x0, ll_empty
+    bne a1, x0, list_len_empty
 
     li a1, 0			# Init counter.
 
-ll_loop_next:
+list_len_loop_next:
     addi a1, a1, 1		# Increment counter.
 
     ld s1, link_next(s1)	# Load link next.
 
-    bne s1, x0, ll_loop_next	# Process next link.
+    bne s1, x0, list_len_loop_next	# Process next link.
 
-    j ll_end
+    j list_len_end
 
-ll_empty:
+list_len_empty:
     li a1, 0			# Load length to return.
 
-ll_end:
+list_len_end:
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
     ld ra, 0(sp)		# Restore ra.
@@ -514,45 +632,84 @@ ll_end:
 
     ret
 
+# Print error, exit.
+list_len_arg_err:
+    la a0, list_len_arg_err_str
+    jal prtstr
+
+    li a0, 31
+    jal endprg
+
+list_len_arg_err_str:	.asciz	"\nlist_len: Arg passed is not a link.\n"
+.align 4
+
 # Return 1 if a list is empty, otherwise return 0.
 # In:  a0 = ptr to a link instance.
 # Ret: a1 = 1 or 0.
 list_is_empty:
 
+   # Configure stack
+    addi sp, sp, d2n	# Advance stack pointer.
+    sd ra, 0(sp)	# Save ra.
+    sd s1, d1(sp)	# Save s1.
+
+    mv s1, a0		# Save arg.
+
     # Check instance ID.
-    lw t0, link_id(a0)       	# Load instance ID.
-    li t1, link_id_val		# Load expected ID.
-    bne t0, t1, lid_err         # Error if ne.
+    jal is_link
+    beqz a0, list_is_empty_arg_err	# Error if not a link.
 
     li a1, 0			# Init return to false.
 
     # Check for empty list.
-    ld t0, link_val(a0)
-    bne t0, x0, lie_end
+    ld t0, link_val(s1)
+    bne t0, x0, list_is_empty_end
 
     li a1, 1			# Set return to true.
 
     # Check for next error.
-    ld t0, link_next(a0)
-    beq t0, x0, lie_end
+    ld t0, link_next(s1)
+    bnez t0, list_is_empty_next_err
     
-    la a0, next_err_str	# Load addr of prefix string.
-    jal prtstr
+list_is_empty_end:
 
-    addi a0, x0, 14	# Load return code.
-    jal endprg
-
-lie_end:
+    # Restore stack.
+    ld s1, d1(sp)		# Restore s1.
+    ld ra, 0(sp)		# Restore ra.
+    addi sp, sp, d2		# Restore sp.
 
     ret
 
-# Print inititalization error and exit.
-lnk_not_inititalized:
+# Print error, exit.
+list_is_empty_next_err:
+    la a0, list_is_empty_next_err_str	# Load addr of prefix string.
+    jal prtstr
+
+    li a0, 33	# Load return code.
+    jal endprg
+
+# Print error, exit.
+list_is_empty_arg_err:
+    la a0, list_is_empty_arg_err_str
+    jal prtstr
+
+    li a0, 32
+    jal endprg
+
+list_is_empty_arg_err_str:	.asciz	"\nlist_is_empty: Arg passed is not a link.\n"
+list_is_empty_next_err_str:	.asciz "\nlist_is_empty: Link empty, but next is non-zero\n"
+.align 4
+
+# Print inititalization error, exit.
+link_sa_not_inititalized:
     la a0, lnk_str
     jal prtstr
 
-    li a0, 17
+    li a0, 34
     jal endprg
+
+lnk_str: 	.asciz "Link stack-array not initialized\n"
+.align 4
 
 # Print a summary of memory usage.
 # In:  Nothing.
@@ -563,9 +720,11 @@ link_left:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save ra.
 
-    ld t0, link_sa_ptr_addr	# Load link stack_array address.
+    # Load link_sa_ptr_addr.
+    la t0, link_sa_ptr_addr
+    ld t0, 0(t0)
 
-    ld a0, 0(t0)	# Load ptr to link stack_array.
+    ld a0, 0(t0)	# Load link_sa_ptr.
 
     jal stack_array_left
 
@@ -575,23 +734,11 @@ link_left:
 
     ret
 
-lnk_str: 	.asciz "Link stack-array not initialized\n"
-next_err_str:	.asciz "\nLink empty, but next non-zero"
-lpo_err_str:	.asciz	"\nList_pop: empty list."
-lp_id_err_str:	.asciz	"List_push: Invalid struct ID."
-lid_err_str:    .asciz  "Invalid instance link id"
-link_str:       .asciz  "Links"
-lp_val_str:	.asciz "[Link: Value: "
-lp_nxt_str:	.asciz ", Next: "
-link_init_err_str: .asciz "Link already initialized\n"
-
+# Let the linker stoer the address of link_sa_ptr.
 link_sa_ptr_addr:   .dword link_sa_ptr
 
 .data 
 
 # Storage for link stack_array struct ptr.
 link_sa_ptr:   .dword 0
-
-
-
 
