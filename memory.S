@@ -92,7 +92,7 @@ invalid_request:
     jal prtstr
     
     li a0, 1	# Load return code
-    jal endprg
+    j endprg
     
 # Display out of memory error, then halt.
 out_of_memory:
@@ -100,7 +100,7 @@ out_of_memory:
     jal prtstr
     
     li	a0, 2	# Load return code
-    jal endprg
+    j endprg
 
 out_str:	.asciz "mem_alloc: Out of memory\n"
 invalid_str:	.asciz "mem_alloc: Invalid memory request\n"
@@ -169,7 +169,7 @@ mem_not_inititalized:
     jal prtstr
 
     li a0, 3
-    jal endprg
+    j endprg
 
 mni_str: 	.asciz "Memory not initialized\n"
 .align 4

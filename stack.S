@@ -105,7 +105,7 @@ stack_new_no_words_err:
     jal prtnl
 
     li a0, 4	# Load return code
-    jal endprg
+    j endprg
 
 stack_new_no_words_err_str:    	.asciz "Invalid number of words "
 .align 4
@@ -188,7 +188,7 @@ stack_push_arg_err:
     jal prtstr
 
     li a0, 5
-    jal endprg
+    j endprg
 
 # Display stack full error message, then halt.
 stack_full:
@@ -201,7 +201,7 @@ stack_full:
     jal prtstr
 
     li a0, 6	# Load return code
-    jal endprg
+    j endprg
 
 stack_push_arg_err_str:	.asciz	"stack_push: Arg passed is not a stack.\n"
 sf_str:			.asciz ": stack full\n"
@@ -247,7 +247,7 @@ stack_pop_arg_err:
     jal prtstr
 
     li a0, 7
-    jal endprg
+    j endprg
 
 # Display stack empty error message, then halt.
 stack_empty:
@@ -260,7 +260,7 @@ stack_empty:
     jal prtstr
  
     li a0, 8	# Load return code
-    jal endprg
+    j endprg
  
 stack_pop_arg_err_str:	.asciz	"stack_pop: Arg passed is not a stack.\n"
 stack_empty_str:		.asciz ": stack empty\n"
@@ -299,14 +299,14 @@ name_too_short:
     jal prtstr
 
     li a0, 9	# Load return code
-    jal endprg
+    j endprg
 
 name_invalid_char:
     ld a0, check_name_char_str
     jal prtstr
 
     li a0, 10	# Load return code
-    jal endprg
+    j endprg
 
 check_name_empty_str:		.asciz "stack_new: Empty string for stack name?"
 check_name_char_str: 		.asciz "stack_new: Invalid character in stack name?\n"
@@ -347,7 +347,7 @@ stack_print_name_arg_err:
     jal prtstr
 
     li a0, 11
-    jal endprg
+    j endprg
 
 stack_print_name_arg_err_str:	.asciz	"stack_print_name: Arg passed is not a stack.\n"
 stack_print_name_prefix:	.asciz "\nStack Name: "
@@ -428,7 +428,7 @@ stack_print_arg_err:
     jal prtstr
 
     li a0, 12
-    jal endprg
+    j endprg
 
 stack_print_arg_err_str:	.asciz	"stack_print: Arg passed is not a stack.\n"
 stack_print_num_str:	.asciz "Max Items: "
@@ -508,7 +508,7 @@ stack_left_arg_err:
     jal prtstr
 
     li a0, 13
-    jal endprg
+    j endprg
 
 stack_left_arg_err_str:	.asciz	"stack_left: Arg passed is not a stack.\n"
 sl_str1:		.asciz "Stack: "

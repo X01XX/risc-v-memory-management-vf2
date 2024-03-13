@@ -152,7 +152,7 @@ element_dealloc_err:
     jal prtstr			# Print error string.
 
     addi a0, x0, 35		# Load return code.
-    jal endprg
+    j endprg
 
 element_dealloc_err_str:	.asciz  "element_dealloc: Arg passed is not an element.\n"
 .align 4
@@ -180,7 +180,6 @@ is_element:
     j is_element_ret 
 
 is_element_ret_false:
-    li a0, 0
     li a0, 0
 
 is_element_ret:
@@ -220,10 +219,10 @@ element_get_name_arg_err:
     jal prtstr			# Print error string.
 
     li a0, 36		# Load return code.
-    jal endprg
+    j endprg
 
 element_get_name_arg_err_str:	.asciz  "element_get_name: Arg passed is not an element.\n"
-.align 4
+.align 8
 
 # Accessor to get element atomic_number.
 # In:  a0 = ptr to element instance.
@@ -255,7 +254,7 @@ element_get_atomic_number_arg_err:
     jal prtstr			# Print error string.
 
     li a0, 37		# Load return code.
-    jal endprg
+    j endprg
 
 element_get_atomic_number_arg_err_str:	.asciz  "element_get_atomic_number: Arg passed is not an element.\n"
 .align 4
@@ -329,7 +328,7 @@ element_print_arg_err:
     jal prtstr			# Print error string.
 
     li a0, 38		# Load return code.
-    jal endprg
+    j endprg
 
 element_print_arg_err_str:	.asciz  "element_print: Arg passed is not an element.\n"
 el_name_str:	.asciz "Name: "
@@ -403,7 +402,7 @@ element_list_print_arg_err:
     jal prtstr
 
     li a0, 39
-    jal endprg
+    j endprg
 
 element_list_print_arg_err_str:	.asciz "element_list_print: Arg passed is not a link.\n"
 .align 4
@@ -417,7 +416,7 @@ element_list_dealloc:
     sd s1, d1(sp)		# Save s1.
     sd s2, d2(sp)		# Save s2.
 
-   # Save arg.
+    # Save arg.
     mv s1, a0                   # Save link ptr.
     mv s2, a0                   # Save link ptr.
 
@@ -467,7 +466,7 @@ element_list_dealloc_arg_err:
     jal prtstr
 
     li a0, 40
-    jal endprg
+    j endprg
 
 element_list_dealloc_arg_err_str:	.asciz	"element_list_dealloc: Arg passed is not a list.\n"
 .align 4
@@ -478,7 +477,7 @@ element_sa_not_inititalized_err:
     jal prtstr
 
     li a0, 41
-    jal endprg
+    j endprg
 
 element_sa_not_inititalized_err_str: 	.asciz "Element stack-array not initialized\n"
 .align 4
@@ -492,9 +491,9 @@ element_left:
     addi sp, sp, d1n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save ra.
 
-    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-    ld t0, 0(t0)	# Load ptr to element stack_array addr.
-    ld a0, 0(t0)	# Load ptr to element stack_array.
+    la a0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
+    ld a0, 0(a0)	# Load ptr to element stack_array addr.
+    ld a0, 0(a0)	# Load ptr to element stack_array.
 
     jal stack_array_left
 

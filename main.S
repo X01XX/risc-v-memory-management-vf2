@@ -10,33 +10,6 @@
 	.global stack_print
 	.global stack_contains
 
-# External labels:
-	.extern endprg			# End program.
-	.extern prtstr			# Print a string.
-	.extern prtdec			# Print a number in base 10.
-	
-	.extern mem_init
-	.extern mem_left
-
-        .extern link_init
-        .extern link_stack_print
-        .extern link_print
-        .extern list_new
-        .extern list_push
-        .extern list_pop
-        .extern list_len
-        .extern list_is_empty
-        .extern link_left
-
-	.extern element_init
-	.extern element_new
-	.extern element_dealloc
-	.extern element_print
-	.extern element_list_print
-	.extern element_stack_print
-	.extern element_list_dealloc
-	.extern element_left
-
 # Doubleword sizes.
 	.equ d1, 8
 
@@ -145,9 +118,6 @@ after_init:
     la a1, sep1
     jal element_list_print
 
-    #li a0, 5
-    #jal endprg
-
     jal prtnl
 
     # Display length and empty
@@ -224,7 +194,7 @@ after_init:
     jal mem_summary
 
     mv a0, x0
-    jal endprg
+    j endprg
 
 # Print a summary of memory usage.
 # In:  Nothing.
@@ -248,7 +218,6 @@ mem_summary:
 
     ret
 
-
 sep1: .asciz ", "
 h_name: .asciz "Hydrogen"
 he_name: .asciz "Helium"
@@ -257,5 +226,3 @@ leaving_str: .asciz "\n\nleaving "
 list_str: .asciz "\nList: "
 len_str: .asciz "\nLen: "
 empty_str: .asciz " Empty: "
-
-name: .ascii "A stack"

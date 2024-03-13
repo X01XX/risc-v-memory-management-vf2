@@ -13,7 +13,7 @@ This allows any number of stack-arrays, without using up registers.
 Allocation is very fast.
 
 Commenting out an error check, and memory zeroing, could make deallocation as fast as allocation,
-with greater risk.  Possibly this could be done with a debug flag and conditional compiling.
+with greater risk.  See the zero_memory and check_for_dups .equs at the begining of stack_array.S.
 
 Function to file:
 
@@ -60,7 +60,7 @@ Memory:
 
   varies:
 
-    3 - Stack-array not initialized.
+    3 - Local memory not initialized.
 
 Stack:
 
@@ -174,7 +174,7 @@ Link:
 
   varies:
 
-    34 - Stack-array not initialized.
+    34 - Link stack-array not initialized.
 
 Element:
 
@@ -204,5 +204,5 @@ Element:
 
   varies:
 
-    41 - Stack-array not initialized.
+    41 - Element stack-array not initialized.
 

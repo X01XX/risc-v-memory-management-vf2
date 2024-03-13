@@ -216,7 +216,7 @@ list_pop_arg_err:
     jal prtstr
 
     li a0, 22	# Load return code.
-    jal endprg
+    j endprg
 
 # Print empty list error, exit.
 list_pop_empty_err:
@@ -224,7 +224,7 @@ list_pop_empty_err:
     jal prtstr
 
     li a0, 23	# Load return code.
-    jal endprg
+    j endprg
 
 list_pop_arg_err_str:	.asciz	"list_pop: Arg passed is not a link.\n"
 list_pop_empty_err_str:	.asciz	"list_pop: empty list.\n"
@@ -297,7 +297,7 @@ list_push_arg_err:
     jal prtstr
 
     li a0, 24
-    jal endprg
+    j endprg
 
 # Print arg error, exit.
 list_push_type_err:
@@ -305,7 +305,7 @@ list_push_type_err:
     jal prtstr
 
     li a0, 25
-    jal endprg
+    j endprg
 
 list_push_arg_err_str:	.asciz	"list_push: Arg passed is not a link.\n"
 list_push_type_err_str:	.asciz	"list_push: Value passed is different than other items.\n"
@@ -353,7 +353,7 @@ list_dealloc_arg_err:
     jal prtstr
 
     li a0, 26
-    jal endprg
+    j endprg
 
 list_dealloc_arg_err_str:	.asciz	"\nlist_dealloc: Arg passed is not a link.\n"
 .align 4
@@ -422,7 +422,7 @@ link_get_val_arg_err:
     jal prtstr
 
     li a0, 27
-    jal endprg
+    j endprg
 
 link_get_val_arg_err_str:	.asciz	"link_get_val: Arg passed is not a link.\n"
 .align 4
@@ -457,7 +457,7 @@ link_get_next_arg_err:
     jal prtstr
 
     li a0, 28
-    jal endprg
+    j endprg
 
 link_get_next_arg_err_str:	.asciz	"\nlink_get_next: Arg passed is not a link.\n"
 .align 4
@@ -536,7 +536,7 @@ link_print_arg_err:
     jal prtstr
 
     li a0, 29
-    jal endprg
+    j endprg
 
 link_print_val_str:	.asciz "[Link: Value: "
 link_print_nxt_str:	.asciz ", Next: "
@@ -585,7 +585,7 @@ link_list_dealloc_arg_err:
     jal prtstr
 
     li a0, 30
-    jal endprg
+    j endprg
 
 link_list_dealloc_arg_err_str:	.asciz	"list_list_dealloc: Arg passed is not a link.\n"
 .align 4
@@ -638,7 +638,7 @@ list_len_arg_err:
     jal prtstr
 
     li a0, 31
-    jal endprg
+    j endprg
 
 list_len_arg_err_str:	.asciz	"\nlist_len: Arg passed is not a link.\n"
 .align 4
@@ -686,7 +686,7 @@ list_is_empty_next_err:
     jal prtstr
 
     li a0, 33	# Load return code.
-    jal endprg
+    j endprg
 
 # Print error, exit.
 list_is_empty_arg_err:
@@ -694,7 +694,7 @@ list_is_empty_arg_err:
     jal prtstr
 
     li a0, 32
-    jal endprg
+    j endprg
 
 list_is_empty_arg_err_str:	.asciz	"\nlist_is_empty: Arg passed is not a link.\n"
 list_is_empty_next_err_str:	.asciz "\nlist_is_empty: Link empty, but next is non-zero\n"
@@ -706,7 +706,7 @@ link_sa_not_inititalized:
     jal prtstr
 
     li a0, 34
-    jal endprg
+    j endprg
 
 lnk_str: 	.asciz "Link stack-array not initialized\n"
 .align 4

@@ -158,7 +158,7 @@ invalid_num_items:
     jal prtstr
 
     li a0, 15	# Load return code.
-    jal endprg
+    j endprg
 
 # Display invalid request, then halt.
 invalid_num_words:
@@ -166,7 +166,7 @@ invalid_num_words:
     jal prtstr
 
     li a0, 16	# Load return code.
-    jal endprg
+    j endprg
 
 invalid_num_words_str:     .asciz "stack_array_new: Invalid number of words"
 invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"
@@ -262,7 +262,7 @@ stack_array_print_arg_err:
     jal prtstr
 
     li a0, 17
-    jal endprg
+    j endprg
 
 stk_adr_str:	.asciz "\nStack addr: "
 ary_adr_str:	.asciz "Array addr: "
@@ -303,7 +303,7 @@ stack_array_alloc_arg_err:
     jal prtstr
 
     li a0, 18
-    jal endprg
+    j endprg
 
 stack_array_alloc_arg_err_str:	.asciz	"stack_array_alloc: Arg passed is not a stack array.\n"
 .align 4
@@ -372,14 +372,14 @@ sad_err:
     jal prtstr
 
     li a0, 20	# Load return code
-    jal endprg
+    j endprg
 
 stack_array_dealloc_arg_err:
     la a0, stack_array_dealloc_arg_err_str
     jal prtstr
 
     li a0, 19
-    jal endprg
+    j endprg
 
 sca_err_str:	.asciz "stack_array_dealloc: Item already in stack\n"
 stack_array_dealloc_arg_err_str:	.asciz	"stack_array_dealloc: Arg passed is not a stack array.\n"
@@ -416,6 +416,6 @@ stack_array_left_arg_err:
     jal prtstr
 
     li a0, 21
-    jal endprg
+    j endprg
 
 stack_array_left_arg_err_str:	.asciz	"stack_array_left: Arg passed is not a stack array.\n"
