@@ -251,7 +251,7 @@ stack_pop_arg_err:
 
 # Display stack empty error message, then halt.
 stack_empty:
-    mv s1, a0		# Save stack ptr.
+    mv a0, s1		# Save stack ptr.
 
     ld a0, stack_desc(s1)
     jal prtstr
