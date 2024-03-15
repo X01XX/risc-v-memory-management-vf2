@@ -62,6 +62,8 @@
 # Ret: a1 - Stack-array instance pointer.
 #      The stack is loaded with the ptr to each array item.
 #      The array ptr is not needed by the caller, it is only used in this function.
+# SE:  Local memory available decreases.
+###################################################################################
 stack_array_new:
     blez a0, invalid_num_items # Check for zero, or negative, number of items.
     blez a1, invalid_num_words # Check for zero, or negative, number of words.
@@ -175,6 +177,8 @@ invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"
 # Check if a ptr references a stack instance.
 # In:  a0 - Ptr to instance.
 # Ret: a0 - 1 = true, 0 = false.
+# SE:  Nothing.
+##############################################
 is_stack_array:
 
    # Configure stack
@@ -184,10 +188,10 @@ is_stack_array:
 
     mv s1, a0		# Save addr.
 
-    jal mem_within	# Avoid a segmentation error in next lw command.
+    jal mem_within	# Avoid a segmentation error in next lwu command.
     beqz a0, is_stack_array_ret_0
 
-    lw t0, sa_id(s1)		# Load instance ID val.
+    lwu t0, sa_id(s1)		# Load instance ID val.
     li t1, stack_array_id_val	# Load expected ID val.
 
     bne t0, t1, is_stack_array_ret_0
@@ -209,7 +213,8 @@ is_stack_array_ret:
 # Print a stack_array.
 # In:  a0 - stack_array ptr.
 # Ret: Nothing.
-# Out: Text to StdOut.
+# SE:  Text to StdOut.
+###############################
 stack_array_print:
     addi sp, sp, d2n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save ra.
@@ -273,6 +278,8 @@ stack_array_print_arg_err_str:	.asciz	"stack_array_print: Arg passed is not a st
 # Get an address of an array item from the stack.
 # In:  a0 - stack_array instance ptr.
 # Ret: a1 - item pointer.
+# SE:  stack array changes.
+###################################################
 stack_array_alloc:
 
    # Configure stack
@@ -312,7 +319,9 @@ stack_array_alloc_arg_err_str:	.asciz	"stack_array_alloc: Arg passed is not a st
 # In:  a0 - stack_array instance ptr.
 #      a1 - addr to deallocate.
 #      Item will be zeroed out.
-# Ret: Nothinig.
+# Ret: Nothing.
+# SE:  Stack array changes.
+##################################################
 stack_array_dealloc:
     # Configure stack.
     addi sp, sp, d3n	# Advance sp for stack frame.
@@ -339,7 +348,7 @@ stack_array_dealloc:
 .ifdef zero_memory
     # Zero out item memory.
     # This section can be commented out for greater speed.
-    lh t0, sa_item_words(s1)	# Load words in item.
+    lhu t0, sa_item_words(s1)	# Load words in item.
     mv t2, s2			# Item ptr to t2.
 sad_loop:
     sw x0, 0(t2)		# Zero out a word
@@ -388,7 +397,8 @@ stack_array_dealloc_arg_err_str:	.asciz	"stack_array_dealloc: Arg passed is not 
 # Print a summary of stack_array usage.
 # In: a0  - Ptr to a stack_array instance.
 # Ret: Nothing.
-# Out: Text to StdOut.
+# SE:  Text to StdOut.
+##########################################
 stack_array_left:
 
    # Configure stack

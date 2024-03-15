@@ -39,6 +39,8 @@
 #
 # In:  a0 contains the number of items to allow for.
 # Ret: Nothing.
+# SE:  Stack array allocated and inititialized.
+#############################################################
 element_init:
     # Configure stack.
     addi sp, sp, d1n		# Advance sp for stack frame.
@@ -81,6 +83,8 @@ element_init_err_str: .asciz "Element already inititalized\n"
 # In:  a0 = Ptr to name string.
 #      a1 = Atomic number.
 # Ret: a1 = Element instance ptr.
+# SE:  Stack array changed.
+#################################
 element_new:
     # Configure stack.
     addi sp, sp, d3n		# Advance sp for stack frame.
@@ -117,6 +121,8 @@ element_new:
 # Deallocate a element.
 # In: a0 is a pointer to an element instance.
 # Ret: Nothing.
+# SE:  Stack array changed.
+##############################################
 element_dealloc:
 
    # Configure stack
@@ -157,9 +163,11 @@ element_dealloc_err:
 element_dealloc_err_str:	.asciz  "element_dealloc: Arg passed is not an element.\n"
 .align 4
 
-# Verify a ptr references a element instance, or halt.
+# Check if a ptr references a element instance.
 # In: a0 = Ptr to instance.
 # Ret: a0 - 1 = true, 0 = false.
+# SE:  Nothing.
+#######################################################
 is_element:
 
    # Configure stack
@@ -172,7 +180,7 @@ is_element:
     jal mem_within	# Check if in local memory.
     beqz a0, is_element_ret_false
 
-    lw t0, element_id(s1)  # Load instance ID val.
+    lwu t0, element_id(s1)  # Load instance ID val.
     li t1, element_id_val  # Load expected ID val.
     bne t0, t1, is_element_ret_false
 
@@ -192,7 +200,9 @@ is_element_ret:
 
 # Accessor to get element name.
 # In:  a0 = ptr to element instance.
-# Ret: a1 = element name.
+# Ret: a1 = element name ptr.
+# SE:  Nothing.
+#####################################
 element_get_name:
 
    # Configure stack
@@ -227,6 +237,8 @@ element_get_name_arg_err_str:	.asciz  "element_get_name: Arg passed is not an el
 # Accessor to get element atomic_number.
 # In:  a0 = ptr to element instance.
 # Ret: a1 = element atomic_number.
+# SE:  Nothing.
+#######################################
 element_get_atomic_number:
 
    # Configure stack
@@ -240,7 +252,7 @@ element_get_atomic_number:
     jal is_element
     beqz a0, element_get_atomic_number_arg_err		# Error if not an element.
 
-    lw a1, element_atomic_number(s1)     # Load element next to return.
+    lwu a1, element_atomic_number(s1)     # Load element next to return.
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
@@ -262,7 +274,8 @@ element_get_atomic_number_arg_err_str:	.asciz  "element_get_atomic_number: Arg p
 # Print the element stack.
 # In:  Nothing.
 # Ret: Nothing.
-# Out: Prints info.
+# SE:  Text to StdOut.
+#################################
 element_stack_print:
     # Configure stack.
     addi sp, sp, d1n		# Advance sp for stack frame.
@@ -285,7 +298,8 @@ element_stack_print:
 # Print an element instance.
 # In:  a0 = ptr to an element instance.
 # Ret: Nothing.
-# Out: Prints info.
+# SE:  Text to StdOut.
+#######################################
 element_print:
     # Configure stack.
     addi sp, sp, d2n		# Advance sp for stack frame.
@@ -310,7 +324,7 @@ element_print:
     la a0, el_an_str
     jal prtstr
 
-    lw a0, element_atomic_number(s1)
+    lwu a0, element_atomic_number(s1)
     jal prtdec
 
     li a0, ']'
@@ -336,8 +350,11 @@ el_an_str:	.asciz ", AN: "
 .align 4
 
 # Print an element linked list.
-# In: a0 = ptr to a link.
-#     a1 = ptr to a string to use as a separator.
+# In:  a0 = ptr to a link.
+#      a1 = ptr to a string to use as a separator.
+# Ret: Nothing.
+# SE:  Text to StdOut.
+##################################################
 element_list_print:
     # Configure stack.
     addi sp, sp, d4n		# Advance sp for stack frame.
@@ -408,7 +425,10 @@ element_list_print_arg_err_str:	.asciz "element_list_print: Arg passed is not a 
 .align 4
 
 # Deallocate a element list.
-# In: a0 = link instance ptr.
+# In:  a0 = link instance ptr.
+# Ret: Nothing.
+# SE:  Stack array changed.
+###############################
 element_list_dealloc:
     # Configure stack.
     addi sp, sp, d3n		# Advance sp for stack frame.
@@ -485,7 +505,8 @@ element_sa_not_inititalized_err_str: 	.asciz "Element stack-array not initialize
 # Print a summary of memory usage.
 # In:  Nothing.
 # Ret: Nothing.
-# Out: Text to StdOut.
+# SE:  Text to StdOut.
+###################################
 element_left:
     # Configure stack.
     addi sp, sp, d1n	# Advance sp for stack frame.

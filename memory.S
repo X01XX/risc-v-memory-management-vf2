@@ -30,6 +30,8 @@
 # Call from main before using mem_alloc.
 # In:  Nothing.
 # Out: Nothing.
+# SE:  Local memory initialized.
+###########################################
 mem_init:
     # Configure stack.
     addi sp, sp, d1n	# Advance sp for stack frame.
@@ -64,6 +66,8 @@ mem_init_err_str: .asciz "mem_init: Memory already initialized\n"
 # Allocate a block of memory.
 # In:  a0 = number words needed.
 # Ret: a1 = Address of memory block.
+# SE:  mem_ptr changed to a higher value.
+##########################################
 mem_alloc:
     blez a0, invalid_request	# Check for zero, or negative, memory request.
 
@@ -108,7 +112,9 @@ invalid_str:	.asciz "mem_alloc: Invalid memory request\n"
 
 # Print the amount of memory that is left, to StdOut.
 # In:  Nothing.
-# Out: A message is displayed.
+# Ret: Nothing.
+# SE:  Text to StdOut.
+######################################################
 mem_left:
     # Configure stack.
     addi sp, sp, d1n		# Advance sp for stack frame.
@@ -177,6 +183,8 @@ mni_str: 	.asciz "Memory not initialized\n"
 # Return true if a given address is within memory.
 # In:  a0 - Address.
 # Ret: a0 - 1 = true, 0 = false.
+# SE:  Nothing.
+###################################################
 mem_within:
     la t0, mem_start_addr
     ld t0, 0(t0)

@@ -45,6 +45,8 @@
 #
 # In:  a0 contains the number of items to allow for.
 # Ret: Nothing.
+# SE:  Stack array initilized.
+############################################################
 link_init:
     # Configure stack.
     addi sp, sp, d1n	# Advance sp for stack frame.
@@ -92,7 +94,9 @@ link_init_err_str:	.asciz "Link already initialized\n"
 # In:  a0 = Link value.
 #      a1 = Link next.
 # Ret: a1 = Link instance ptr.
+# SE:  Stack array changed.
 link_new:
+###############################
     # Configure stack.
     addi sp, sp, d3n
     sd ra, 0(sp)                # Save ra.
@@ -132,6 +136,8 @@ link_new:
 # Return an empty list, a link with value 0, next 0.
 # In:  Nothing.
 # Ret: a1 = empty list.
+# SE:  Stack array changed.
+#####################################################
 list_new:
     # Configure stack.
     addi sp, sp, d1n		# Advance sp for stack frame.
@@ -151,6 +157,8 @@ list_new:
 # Pop a value from a list.
 # In:  a0 = List (first link) ptr.
 # Ret: a1 = First list value ptr.
+# SE:  Stack array changed.
+##################################
 list_pop:
     # Configure stack.
     addi sp, sp, d4n		# Advance sp for stack frame.
@@ -231,9 +239,12 @@ list_pop_empty_err_str:	.asciz	"list_pop: empty list.\n"
 .align 4
 
 # Push a value onto a list of structs, sharing the same ID value.
+# Preserve the first link, that the caller expects is the start of the list.
 # In:  a0 = a link ptr.
 #      a1 = value ptr. a1 = struct value, with ID in first word.
 # Ret: Nothing.
+# SE:  Stack array changed.
+###########################################################################
 list_push:
     # Configure stack.
     addi sp, sp, d3n		# Advance sp for stack frame.
@@ -259,8 +270,8 @@ list_push:
 
     # Check value ids is equal to other IDs in the list.
     ld t0, link_val(s1)		# Get first link value.
-    lw t0, 0(t0)		# Get value ID.
-    lw t1, 0(s2)		# Get value-to-push ID.
+    lwu t0, 0(t0)		# Get value ID.
+    lwu t1, 0(s2)		# Get value-to-push ID.
     bne t0, t1, list_push_type_err	# Jump if instances not eq.
 
     jal link_new	 # Get new link, to a1.
@@ -315,6 +326,8 @@ list_push_type_err_str:	.asciz	"list_push: Value passed is different than other 
 # Deallocate a link.
 # In: a0 contains a pointer to a link instance.
 # Ret: Nothing.
+# SE:  Stack array changed.
+###############################################
 link_dealloc:
    # Configure stack
     addi sp, sp, d2n	# Advance stack pointer.
@@ -361,6 +374,8 @@ list_dealloc_arg_err_str:	.asciz	"\nlist_dealloc: Arg passed is not a link.\n"
 # Check if a ptr references a link instance.
 # In:  a0 - Ptr to instance.
 # Ret: a0 - 1 = true, 0 = false.
+# SE:  Nothing.
+############################################
 is_link:
 
    # Configure stack
@@ -370,10 +385,10 @@ is_link:
 
     mv s1, a0		# Save addr.
 
-    jal mem_within	# Avoid a segmentation error in next lw command.
+    jal mem_within	# Avoid a segmentation error in next lwu command.
     beqz a0, is_link_ret_0
 
-    lw t0, link_id(s1)	# Load instance ID val.
+    lwu t0, link_id(s1)	# Load instance ID val.
     li t1, link_id_val	# Load expected ID val.
 
     bne t0, t1, is_link_ret_0
@@ -395,6 +410,8 @@ is_link_ret:
 # Accessor to get link value.
 # In:  a0 = ptr to link instance.
 # Ret: a1 = link value.
+# SE:  Nothing.
+##################################
 link_get_val:
 
    # Configure stack
@@ -430,6 +447,8 @@ link_get_val_arg_err_str:	.asciz	"link_get_val: Arg passed is not a link.\n"
 # Accessor to get link next.
 # In:  a0 = ptr to link instance.
 # Ret: a1 = link next.
+# SE:  Nothing.
+##################################
 link_get_next:
 
    # Configure stack
@@ -465,7 +484,8 @@ link_get_next_arg_err_str:	.asciz	"\nlink_get_next: Arg passed is not a link.\n"
 # Print the link stack.
 # In:  Nothing.
 # Ret: Nothing.
-# Out: Prints info.
+# SE:  Prints info to StdOut.
+##############################
 link_stack_print:
     # Configure stack.
     addi sp, sp, d1n		# Advance sp for stack frame.
@@ -490,7 +510,8 @@ link_stack_print:
 # Print an link instance.
 # In:  a0 = ptr to a link instance.
 # Ret: Nothing.
-# Out: Prints info.
+# SE:  Prints info to StdOut.
+###################################
 link_print:
     # Configure stack.
     addi sp, sp, d2n		# Advance sp for stack frame.
@@ -545,7 +566,10 @@ link_print_arg_err_str:		.asciz	"\nlink_print: Arg passed is not a link.\n"
 
 # Deallocate a linked list.
 # Clear values from the list before calling this.
-# In: a0 = ptr to a link instance.
+# In:  a0 = ptr to a link instance.
+# Ret: Nothing.
+# SE:  Stack array changed.
+##################################################
 link_list_dealloc:
     # Configure stack.
     addi sp, sp, d3n		# Advance sp for stack frame.
@@ -593,6 +617,8 @@ link_list_dealloc_arg_err_str:	.asciz	"list_list_dealloc: Arg passed is not a li
 # Return the length of a list.
 # In:  a0 = ptr to a link instance.
 # Ret: a1 = list length.
+# SE:  Nothing.
+###################################
 list_len:
     # Configure stack.
     addi sp, sp, d2n		# Advance sp for stack frame.
@@ -646,6 +672,8 @@ list_len_arg_err_str:	.asciz	"\nlist_len: Arg passed is not a link.\n"
 # Return 1 if a list is empty, otherwise return 0.
 # In:  a0 = ptr to a link instance.
 # Ret: a1 = 1 or 0.
+# SE:  Nothing.
+###################################################
 list_is_empty:
 
    # Configure stack
@@ -714,7 +742,8 @@ lnk_str: 	.asciz "Link stack-array not initialized\n"
 # Print a summary of memory usage.
 # In:  Nothing.
 # Ret: Nothing.
-# Out: Text to StdOut.
+# SE:  Text to StdOut.
+#################################
 link_left:
     # Configure stack.
     addi sp, sp, d1n	# Advance sp for stack frame.

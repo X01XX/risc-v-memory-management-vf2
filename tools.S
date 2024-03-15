@@ -26,7 +26,8 @@
 # Print a signed number to StdOut, in base 10.
 # In:  a0 - A number.
 # Ret: Nothing.
-# Out: A decimal number.
+# SE:  A decimal number to StdOut.
+###############################################
 prtdec:
     # Configure stack.
     addi sp, sp, d5n		# Advance sp for stack frame.
@@ -92,7 +93,8 @@ prtdec_end:
 # Print a unsigned number to StdOut, in base 16.
 # In:  a0 - A number.
 # Ret: Nothing.
-# Out: A hexidecimal number.
+# SE:  A hexidecimal number to StdOut.
+#################################################
 prthex:
     # Configure stack.
     addi sp, sp, d5n		# Advance sp for stack frame.
@@ -159,7 +161,8 @@ prthex_end:
 # Print a newline.
 # In:  Nothing.
 # Ret: Nothing.
-# Out: Newline to StdOut.
+# SE:  Newline to StdOut.
+###########################
 prtnl:
     # Configure stack.
     addi sp, sp, d1n		# Advance sp for stack frame.
@@ -177,10 +180,11 @@ prtnl:
 
     ret
 
-# Print a character, to StdOut.
+# Print a character.
 # In:  a0 - character value.
 # Ret: Nothing.
-# Out: A character.
+# SE:  A character to StdOut.
+###############################
 prtchr:
     # Configure stack.
     addi sp, sp, d1n		# Advance sp for stack frame.
@@ -202,10 +206,11 @@ prtchr:
 
     ret
 
-# Print a string, to StdOut.
+# Print a string.
 # In:  a0 - ptr to a zero delimited string.
 # Ret: Nothing.
-# Out: A string.
+# SE:  A string to StdOut.
+###########################################
 prtstr:
     # Configure stack.
     addi sp, sp, d2n	# Advance sp for stack frame.
@@ -229,7 +234,8 @@ prtstr:
 # End program.
 # In:  a0 - return code.
 # Ret: Nothing.
-# Out: Return code.
+# SE:  Program terminates, with the given return code.
+#######################################################
 endprg:
     addi a7, x0, 93	# Service code 93 terminates program.
     ecall
@@ -237,7 +243,9 @@ endprg:
 # Return the length of a string.
 # In:  a0 = ptr to string.
 # Ret: a2 = length.
+# SE:  Nothing.
 # Note: returns on first non-printable character.
+#################################################
 strlen:
     mv t1, a0		# Init byte pointer
     li t2, ' '		# Init lowest character.
@@ -247,7 +255,7 @@ strlen:
 
 # Loop to check each character.
 sl_loop_next:
-    lb t0, 0(t1)		# Load a byte.
+    lbu t0, 0(t1)		# Load a byte.
 
     beq t0, t4, sl_skip_check	# newline is OK.
 

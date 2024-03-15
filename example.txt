@@ -19,13 +19,11 @@ Number Available Items: 3
 0x6110C
 Array addr: 0x610EC
 
-
 List: ([Name: Hydrogen, AN: 1], [Name: Helium, AN: 2])
 
 Allocate-only memory: 1931 Words of 2000 left.
 Stack: Links,  1 item of 3 left.
 Stack: Element,  1 item of 3 left.
-
 Len: 2 Empty: 0
 
 Stack_Array addr: 0x61008

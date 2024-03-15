@@ -67,9 +67,9 @@ after_init:
     mv a0, s1		# Load list ptr.
     la a1, sep1
     jal element_list_print
+    jal prtnl
 
     # Print memory summary, so far.
-    jal prtnl
     jal mem_summary
 
     # Display length and empty
@@ -100,17 +100,20 @@ after_init:
     mv s3, a1
 
     # Print popped value.
+    jal prtnl
     la a0, popped_str
     jal prtstr
 
     mv a0, s3
     jal element_print
+    jal prtnl
 
     # Dealloc popped value.
     mv a0, s3
     jal element_dealloc
 
     # Print list after pop.
+    jal prtnl
     la a0, leaving_str
     jal prtstr
 
@@ -121,6 +124,7 @@ after_init:
     jal prtnl
 
     # Display length and empty
+    jal prtnl
     la a0, len_str
     jal prtstr
 
@@ -145,23 +149,27 @@ after_init:
     mv s3, a1
 
     # Print popped value.
+    jal prtnl
     la a0, popped_str
     jal prtstr
 
     mv a0, s3
     jal element_print
+    jal prtnl
 
     # Dealloc popped value.
     mv a0, s3
     jal element_dealloc
 
     # Print list after pop.
+    jal prtnl
     la a0, leaving_str
     jal prtstr
 
     mv a0, s1		# Load list ptr.
     la a1, sep1
     jal element_list_print
+    jal prtnl
 
     # Display length and empty
     jal prtnl
@@ -221,8 +229,8 @@ mem_summary:
 sep1: .asciz ", "
 h_name: .asciz "Hydrogen"
 he_name: .asciz "Helium"
-popped_str: .asciz "\npopped: "
-leaving_str: .asciz "\n\nleaving "
-list_str: .asciz "\nList: "
-len_str: .asciz "\nLen: "
+popped_str: .asciz "popped: "
+leaving_str: .asciz "leaving "
+list_str: .asciz "List: "
+len_str: .asciz "Len: "
 empty_str: .asciz " Empty: "

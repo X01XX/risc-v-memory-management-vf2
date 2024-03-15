@@ -46,6 +46,8 @@
 # In:  a0, contains the number of items the stack will need to support.
 #      a1, contains a ptr to a string that will name the stack for error messages.
 # Ret: a1, a ptr to the memory allocated for the stack (header).
+# SE:  Local memory available decreases.
+##################################################################################
 stack_new:
     blez a0, stack_new_no_words_err	# Check for zero, or negative, number of words.
 
@@ -113,6 +115,8 @@ stack_new_no_words_err_str:    	.asciz "Invalid number of words "
 # Check if a ptr references a stack instance.
 # In:  a0 - Ptr to instance.
 # Ret: a0 - 1 = true, 0 = false.
+# SE:  Nothing.
+############################################
 is_stack:
 
    # Configure stack
@@ -122,11 +126,11 @@ is_stack:
 
     mv s1, a0		# Save addr.
 
-    jal mem_within	# Avoid a segmentation error in next lw command.
+    jal mem_within	# Avoid a segmentation error in next lwu command.
     beqz a0, is_stack_ret_0
 
-    lw t0, stack_id(s1)	# Load instance ID val.
-    li t1, stack_id_val	# Load expected ID val.
+    lwu t0, stack_id(s1)	# Load instance ID val.
+    li t1, stack_id_val		# Load expected ID val.
 
     bne t0, t1, is_stack_ret_0
 
@@ -148,6 +152,8 @@ is_stack_ret:
 # In:  a0, ptr to a stack.
 #      a1, value to push.
 # Ret: Nothing.
+# SE:  Stack changed.
+################################
 stack_push:
 
    # Configure stack
@@ -208,8 +214,10 @@ sf_str:			.asciz ": stack full\n"
 .align 4
 
 # Pop a value from the a stack.
-# In:  a0, ptr to a stack.
-# Ret: a1, value on stack.
+# In:  a0 - ptr to a stack.
+# Ret: a1 - value on stack.
+# SE:  Stack changed.
+################################
 stack_pop:
 
    # Configure stack
@@ -266,13 +274,16 @@ stack_pop_arg_err_str:	.asciz	"stack_pop: Arg passed is not a stack.\n"
 stack_empty_str:		.asciz ": stack empty\n"
 .align 4
 
-# Check a stack name string, ended with 0, for length and unprintable characters.
+# Check a stack name string, ended with 0, for GT 0 length and
+# unprintable characters, else exit.
 # In:  a0 = pointer to string.
 # Ret: Nothing.
+# SE:  Nothing.
 # Note: Any length GT 0 is OK.
 #       No check for a duplicate name with another stack.
+###################################################################
 check_name:
-    lb t0, 0(a0)	# Check for zero length.
+    lbu t0, 0(a0)	# Check for zero length.
     beqz t0, name_too_short
 
     mv t1, a1		# Init byte pointer
@@ -281,7 +292,7 @@ check_name:
 
 # Loop to check each character.
 check_name_loop_next:
-    lb t0, 0(t1) 		# Load next byte
+    lbu t0, 0(t1) 		# Load next byte
     beqz t0, check_name_loop_done	# Done if zero char found.
 
     bltu t0, t2, name_invalid_char	# Check for low invalid chacacter.
@@ -312,10 +323,11 @@ check_name_empty_str:		.asciz "stack_new: Empty string for stack name?"
 check_name_char_str: 		.asciz "stack_new: Invalid character in stack name?\n"
 .align 4
 
-# Print the stack name, to StdOut.
+# Print the stack name.
 # In:  a0 - Ptr to stack.
 # Ret: Nothing.
-# Out: Text printed.
+# SE:  Text printed to StdOut.
+################################ 
 stack_print_name:
    # Configure stack
     addi sp, sp, d2n	# Advance stack pointer.
@@ -356,7 +368,8 @@ stack_print_name_prefix:	.asciz "\nStack Name: "
 # Print a stack.
 # In:  a0, ptr to a stack struct.
 # Ret: Nothing.
-# Out: Text printed.
+# SE:  Text printed to StdOut.
+##################################
 stack_print:
    # Configure stack
     addi sp, sp, d4n	# Advance stack pointer.
@@ -438,7 +451,8 @@ stack_print_items_str:	.asciz "Number Available Items: "
 # Print summary of stack usage.
 # In:  a0 - ptr to a stack instance.
 # Ret: Nothing.
-# Out: Text to StdOut.
+# SE:  Text to StdOut.
+####################################
 stack_left:
 
     # Configure stack.
@@ -522,6 +536,8 @@ sl_str5:		.asciz " left.\n"
 # In:  a0, ptr to a stack struct.
 #      a1, item to check for.
 # Ret: a1 = 1 if true, 0 if false.
+# SE:  Nothing.
+###################################
 stack_contains:
     ld t1, stack_start(a0)	# Load stack start.
 
