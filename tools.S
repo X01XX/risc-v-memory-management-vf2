@@ -193,8 +193,8 @@ prtchr:
     la a1, char_addr		# Get char buffer address.
     ld a1, 0(a1)
 
-    sb a0, 0(a1)
-     			# Load addr of character
+    sb a0, 0(a1)		# Store char in buffer.
+
     addi a0, x0, 1		# StdOut
     addi a2, x0, 1		# String length
     addi a7, x0, 64		# linux write call

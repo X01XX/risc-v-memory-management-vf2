@@ -59,7 +59,7 @@
 # In:  a0 - Number of items.
 #      a1 - Number of words in each item.
 #      a2 - Pointer to string description.
-# Ret: a1 - Stack-array instance pointer.
+# Ret: a0 - Stack-array instance pointer.
 #      The stack is loaded with the ptr to each array item.
 #      The array ptr is not needed by the caller, it is only used in this function.
 # SE:  Local memory available decreases.
@@ -85,8 +85,8 @@ stack_array_new:
 
     # Allocate sa struct.
     li	a0, sa_words	# Load number words in SA struct.
-    jal mem_alloc	# Get ptr to array into a1.
-    mv s7, a1		# Save sa struct ptr.
+    jal mem_alloc	# Get ptr to array into a0.
+    mv s7, a0		# Save sa struct ptr.
 
     # Set struct ID.
     li t0, stack_array_id_val
@@ -101,19 +101,19 @@ stack_array_new:
     # Allocate new stack.
     mv	a0, s1		# Load number of items.
     mv	a1, s3		# Load ptr to description.
-    jal stack_new	# Get ptr to stack in a1.
+    jal stack_new	# Get ptr to stack in a0.
 
     # Save stack struct ptr to SA struct.
-    sd  a1, sa_stack_ptr(s7)
+    sd  a0, sa_stack_ptr(s7)
 	
     # Allocate array.
 
     # Calc array words.
     mul a0, s1, s2	# Get number of words of array memory needed.
-    jal mem_alloc	# a0 contains number words needed.  Get memory allocation for array into a1.
+    jal mem_alloc	# a0 contains number words needed.  Get memory allocation for array into a0.
 
     # Save array ptr to struct.
-    sd  a1, sa_array_ptr(s7)
+    sd  a0, sa_array_ptr(s7)
 	
     # Push the ptr to each array item onto the stack.
 
@@ -139,7 +139,7 @@ loop:
     bgtz s1, loop	# Return if zero, no items left.
     
 ret:
-    mv a1, s7		# Load sa ptr to return.
+    mv a0, s7		# Load sa ptr to return.
 
     # Cleanup stack.
     ld s1, d1(sp)	# Restore s1.
@@ -152,7 +152,7 @@ ret:
     ld ra, 0(sp)	# Restore ra.
     addi sp, sp, d8	# Restore sp.
 
-    ret			# Return a1
+    ret			# Return a0
 
 # Display invalid request, then halt.
 invalid_num_items:
@@ -277,7 +277,7 @@ stack_array_print_arg_err_str:	.asciz	"stack_array_print: Arg passed is not a st
 
 # Get an address of an array item from the stack.
 # In:  a0 - stack_array instance ptr.
-# Ret: a1 - item pointer.
+# Ret: a0 - item pointer.
 # SE:  stack array changes.
 ###################################################
 stack_array_alloc:
@@ -295,7 +295,7 @@ stack_array_alloc:
     # Load stack_address.
     ld a0, sa_stack_ptr(s1)
 
-    # Get item from stack.  Stack may be empty, causing a halt.
+    # Get item from stack, into a0.
     jal stack_pop
 
     # Restore stack.
@@ -342,7 +342,7 @@ stack_array_dealloc:
     mv a1, s2
     jal stack_contains
     li t0, 1
-    beq a1, t0, sad_err
+    beq a0, t0, sad_err
 .endif
 
 .ifdef zero_memory

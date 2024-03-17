@@ -65,7 +65,7 @@ mem_init_err_str: .asciz "mem_init: Memory already initialized\n"
 
 # Allocate a block of memory.
 # In:  a0 = number words needed.
-# Ret: a1 = Address of memory block.
+# Ret: a0 = Address of memory block.
 # SE:  mem_ptr changed to a higher value.
 ##########################################
 mem_alloc:
@@ -74,11 +74,11 @@ mem_alloc:
     la t0, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
     ld t0, 0(t0)
 
-    ld a1, 0(t0)	# Get free block pointer, for return.
-    beqz a1, mem_not_inititalized
+    ld t3, 0(t0)	# Get free block pointer, for return.
+    beqz t3, mem_not_inititalized
 
     slli t1, a0, wbyts	# Multiply word number by number bytes per word.
-    add t1, a1, t1	# Increment memory pointer to new free block start.
+    add t1, t3, t1	# Increment memory pointer to new free block start.
 
     la t2, mem_end_addr	# Check if new free block pointer is beyond the end of memory.
     ld t2, 0(t2)
@@ -87,7 +87,9 @@ mem_alloc:
 
     sd t1, 0(t0)	# Store new free block pointer.
 
-    ret			# Return a1
+    mv a0, t3		# Temp, to convert
+
+    ret			# Return a0
    
 # Display invalid memory request, then halt.
 invalid_request:
@@ -108,7 +110,7 @@ out_of_memory:
 
 out_str:	.asciz "mem_alloc: Out of memory\n"
 invalid_str:	.asciz "mem_alloc: Invalid memory request\n"
-.align 4
+.align 8
 
 # Print the amount of memory that is left, to StdOut.
 # In:  Nothing.

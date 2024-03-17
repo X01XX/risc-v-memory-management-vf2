@@ -36,13 +36,13 @@ after_init:
 
     # Init new list, save to s1.
     jal list_new
-    mv s1, a1
+    mv s1, a0
 
     # Make a new element instance.
     la a0, he_name
     li a1, 2
-    jal element_new	# New element instance to a1.
-    mv s2, a1
+    jal element_new	# New element instance to a0.
+    mv s2, a0
 
     # Push to list.
     mv a0, s1		# Load list ptr.
@@ -52,8 +52,8 @@ after_init:
     # Make a new element instance.
     la a0, h_name
     li a1, 1
-    jal element_new	# New element instance to a1.
-    mv s2, a1		# Save ptr.
+    jal element_new	# New element instance to a0.
+    mv s2, a0		# Save ptr.
 
     # Push to list.
     mv a0, s1		# Load list ptr.
@@ -78,7 +78,7 @@ after_init:
 
     mv a0, s1
     jal list_len
-    mv a0, a1
+
     jal prtdec
     #
     la a0, empty_str
@@ -86,7 +86,6 @@ after_init:
 
     mv a0, s1
     jal list_is_empty
-    mv a0, a1
     jal prtdec
 
     jal prtnl
@@ -97,7 +96,7 @@ after_init:
     # Pop, save, a value.
     mv a0, s1
     jal list_pop
-    mv s3, a1
+    mv s3, a0
 
     # Print popped value.
     jal prtnl
@@ -130,7 +129,6 @@ after_init:
 
     mv a0, s1
     jal list_len
-    mv a0, a1
     jal prtdec
     #
     la a0, empty_str
@@ -138,7 +136,6 @@ after_init:
 
     mv a0, s1
     jal list_is_empty
-    mv a0, a1
     jal prtdec
 
     jal prtnl
@@ -146,7 +143,7 @@ after_init:
     # Pop, save, a value.
     mv a0, s1
     jal list_pop
-    mv s3, a1
+    mv s3, a0
 
     # Print popped value.
     jal prtnl
@@ -178,7 +175,6 @@ after_init:
     jal prtstr
     mv a0, s1
     jal list_len
-    mv a0, a1
     jal prtdec
     #
     la a0, empty_str
@@ -186,7 +182,6 @@ after_init:
 
     mv a0, s1
     jal list_is_empty
-    mv a0, a1
     jal prtdec
 
     # Dealloc empty list

@@ -45,7 +45,7 @@
 #
 # In:  a0, contains the number of items the stack will need to support.
 #      a1, contains a ptr to a string that will name the stack for error messages.
-# Ret: a1, a ptr to the memory allocated for the stack (header).
+# Ret: a0, a ptr to the memory allocated for the stack (header).
 # SE:  Local memory available decreases.
 ##################################################################################
 stack_new:
@@ -65,26 +65,26 @@ stack_new:
     jal check_name		# Check stack name is OK.
 
     li a0, stack_words		# Load number of stack struct words.
-    jal mem_alloc		# Get stack struct memory ptr into a1.
-    mv s3, a1			# Save stack struct ptr.
+    jal mem_alloc		# Get stack struct memory ptr into a0.
+    mv s3, a0			# Save stack struct ptr.
 
     li t0, stack_id_val		# Store stack struct id.
     sw t0, stack_id(s3)
 
     mv a0, s1			# Load stack size.
     slli a0, a0, 1		# Multiply to change number items into words where there are 2 words per dword address.
-    jal mem_alloc		# Get stack memory ptr into a1.
+    jal mem_alloc		# Get stack memory ptr into a0.
 
-    sd a1, stack_start(s3)	# Store stack memory ptr in stack struct.
-    sd a1, stack_tos(s3)	# Store stack tos ptr in stack struct.
+    sd a0, stack_start(s3)	# Store stack memory ptr in stack struct.
+    sd a0, stack_tos(s3)	# Store stack tos ptr in stack struct.
 
     slli t2, s1, dbyts		# Multiply number words by word size to get size in bytes.
-    add t2, a1, t2		# Add stack number bytes to stack start.
+    add t2, a0, t2		# Add stack number bytes to stack start.
     sd t2, stack_end(s3)	# Store end into stack struct.
 
     sd s2, stack_desc(s3)	# Store name ptr.
 
-    mv a1, s3			# Load stack struct ptr to return in a1.
+    mv a0, s3			# Load stack struct ptr to return in a0.
 
     # Restore stack.
     ld s3, d3(sp)		# Restore s3.
@@ -93,7 +93,7 @@ stack_new:
     ld ra, 0(sp)		# Restore ra.
     addi sp, sp, d4		# Restore sp.
 
-    ret				# Return a1
+    ret				# Return a0
 
 # Display invalid request, then halt.
 stack_new_no_words_err:
@@ -215,7 +215,7 @@ sf_str:			.asciz ": stack full\n"
 
 # Pop a value from the a stack.
 # In:  a0 - ptr to a stack.
-# Ret: a1 - value on stack.
+# Ret: a0 - value on stack.
 # SE:  Stack changed.
 ################################
 stack_pop:
@@ -240,14 +240,14 @@ stack_pop:
     addi t0, t0, d1n		# Point to the previous word.
     sd t0, stack_tos(s1)	# Store the new stack ptr.
 
-    ld a1, 0(t0)		# Load the value into a1.
+    ld a0, 0(t0)		# Load the value into a0.
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
     ld ra, 0(sp)		# Restore ra.
     addi sp, sp, d2		# Restore sp.
 
-    ret				# Return a1.
+    ret				# Return a0.
 
 # Print error, exit.
 stack_pop_arg_err:
@@ -535,7 +535,7 @@ sl_str5:		.asciz " left.\n"
 # Check a stack for a value.
 # In:  a0, ptr to a stack struct.
 #      a1, item to check for.
-# Ret: a1 = 1 if true, 0 if false.
+# Ret: a0 = 1 if true, 0 if false.
 # SE:  Nothing.
 ###################################
 stack_contains:
@@ -556,10 +556,10 @@ sca_loop_next:
     j sca_loop_next
 sca_loop_end:
 
-    li a1, 0			# Load a1 with false indicator.
+    li a0, 0			# Load a1 with false indicator.
     ret
 
 sca_true:
-    li a1, 1			# Load a1 with true indicator.
+    li a0, 1			# Load a1 with true indicator.
     ret
 

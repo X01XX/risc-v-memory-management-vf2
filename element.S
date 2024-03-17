@@ -54,13 +54,14 @@ element_init:
 
     li a1, element_words	# Load number words per item.
     la a2, element_str		# Load stack_array decription ptr.
-    jal stack_array_new		# sa struct adr to a1
+    jal stack_array_new		# sa struct adr to a0
+
 
     # Save element sa ptr.
     la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
     ld t0, 0(t0)
 
-    sd a1, 0(t0)
+    sd a0, 0(t0)
 
     j element_init_ret
 
@@ -82,7 +83,7 @@ element_init_err_str: .asciz "Element already inititalized\n"
 # Return a new element.
 # In:  a0 = Ptr to name string.
 #      a1 = Atomic number.
-# Ret: a1 = Element instance ptr.
+# Ret: a0 = Element instance ptr.
 # SE:  Stack array changed.
 #################################
 element_new:
@@ -102,13 +103,13 @@ element_new:
     ld a0, 0(t0)		# Get element stack_array pointer.
 
     beqz a0, element_sa_not_inititalized_err
-    jal stack_array_alloc	# Get a new item into a1, or stack empty.
+    jal stack_array_alloc	# Get a new item into a0, or stack empty.
 
     # Load values into element instance.
     li t0, element_id_val	# Load the element id value.
-    sw t0, element_id(a1)	# Set element ID.
-    sd s1, element_name(a1)	# Store element name ptr.
-    sw s2, element_atomic_number(a1)	# Store atomic number.
+    sw t0, element_id(a0)	# Set element ID.
+    sd s1, element_name(a0)	# Store element name ptr.
+    sw s2, element_atomic_number(a0)	# Store atomic number.
 
     # Restore stack.
     ld s2, d2(sp)		# Restore s2.
@@ -200,7 +201,7 @@ is_element_ret:
 
 # Accessor to get element name.
 # In:  a0 = ptr to element instance.
-# Ret: a1 = element name ptr.
+# Ret: a0 = element name ptr.
 # SE:  Nothing.
 #####################################
 element_get_name:
@@ -216,7 +217,7 @@ element_get_name:
     jal is_element
     beqz a0, element_get_name_arg_err		# Error if not an element.
 
-    ld a1, element_name(s1)     # Load element next to return.
+    ld a0, element_name(s1)     # Load element next to return.
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
@@ -236,7 +237,7 @@ element_get_name_arg_err_str:	.asciz  "element_get_name: Arg passed is not an el
 
 # Accessor to get element atomic_number.
 # In:  a0 = ptr to element instance.
-# Ret: a1 = element atomic_number.
+# Ret: a0 = element atomic_number.
 # SE:  Nothing.
 #######################################
 element_get_atomic_number:
@@ -252,7 +253,7 @@ element_get_atomic_number:
     jal is_element
     beqz a0, element_get_atomic_number_arg_err		# Error if not an element.
 
-    lwu a1, element_atomic_number(s1)     # Load element next to return.
+    lwu a0, element_atomic_number(s1)     # Load element next to return.
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
@@ -378,12 +379,12 @@ element_list_print:
     # Check for empty list.
     mv a0, s1			# Get link value.
     jal link_get_val
-    beq a1, x0, epl_loop_end
+    beq a0, x0, epl_loop_end
 
 epl_loop_next:
-    mv a0, s1			# Load link value, to a1.
+    mv a0, s1			# Load link value, to a0.
     jal link_get_val
-    mv s3, a1
+    mv s3, a0
 
     mv a0, s3			# Print it.
     jal element_print
@@ -391,9 +392,9 @@ epl_loop_next:
     mv a0, s1			# Load link next.
     jal link_get_next
 
-    beq a1, x0, epl_loop_end
+    beq a0, x0, epl_loop_end
 
-    mv s1, a1			# Update link next.
+    mv s1, a0			# Update link next.
 
     mv a0, s2
     jal prtstr			# Print separator.
@@ -449,20 +450,19 @@ element_list_dealloc:
     # Check for empty list.
     mv a0, s1			# Get link value.
     jal link_get_val
-    beq a1, x0, edl_loop_end
+    beq a0, x0, edl_loop_end
 
 edl_loop_next:
     mv a0, s1
-    jal link_get_val		# Get element ptr in a1.
+    jal link_get_val		# Get element ptr in a0.
 
     # Deallocate the element.
-    mv a0, a1
     jal element_dealloc
 
     # Point to the next link.
     mv a0, s1
     jal link_get_next
-    mv s1, a1
+    mv s1, a0
 
     beq s1, x0, edl_loop_end
 
@@ -489,7 +489,7 @@ element_list_dealloc_arg_err:
     j endprg
 
 element_list_dealloc_arg_err_str:	.asciz	"element_list_dealloc: Arg passed is not a list.\n"
-.align 4
+.align 8
 
 # Print inititalization error and exit.
 element_sa_not_inititalized_err:

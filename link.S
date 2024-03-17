@@ -64,13 +64,13 @@ link_init:
 
     la a2, link_str     # Load stack_array decription ptr.
 
-    jal stack_array_new # sa struct adr to a1
+    jal stack_array_new # sa struct adr to a0
 
     # Load link_sa_ptr_addr.
     la t0, link_sa_ptr_addr
     ld t0, 0(t0)
 
-    sd a1, 0(t0)		# Store stack_array address.
+    sd a0, 0(t0)		# Store stack_array address.
 
     j link_init_ret
 
@@ -93,7 +93,7 @@ link_init_err_str:	.asciz "Link already initialized\n"
 # Return a new link.
 # In:  a0 = Link value.
 #      a1 = Link next.
-# Ret: a1 = Link instance ptr.
+# Ret: a0 = Link instance ptr.
 # SE:  Stack array changed.
 link_new:
 ###############################
@@ -117,13 +117,13 @@ link_new:
 
     beqz a0, link_sa_not_inititalized	# Error if not initialized.
 
-    jal stack_array_alloc	# Get a new link instance into a1.
+    jal stack_array_alloc	# Get a new link instance into a0.
 
     # Store values into instance.
     li t0, link_id_val		# Load the link id value.
-    sw t0, link_id(a1)		# Set link ID in returned instance.
-    sd s1, link_val(a1)		# Store link value prt.
-    sd s2, link_next(a1)	# Store link next prt.
+    sw t0, link_id(a0)		# Set link ID in returned instance.
+    sd s1, link_val(a0)		# Store link value prt.
+    sd s2, link_next(a0)	# Store link next prt.
 
     # Restore stack.
     ld s2, d2(sp)               # Restore s2.
@@ -135,7 +135,7 @@ link_new:
 
 # Return an empty list, a link with value 0, next 0.
 # In:  Nothing.
-# Ret: a1 = empty list.
+# Ret: a0 = empty list.
 # SE:  Stack array changed.
 #####################################################
 list_new:
@@ -146,7 +146,7 @@ list_new:
     # Get new, empty, link instance.
     li a0, 0
     li a1, 0
-    jal link_new
+    jal link_new		# New link to a0.
 
     # Restore stack.
     ld ra, 0(sp)		# Restore ra.
@@ -156,7 +156,7 @@ list_new:
 
 # Pop a value from a list.
 # In:  a0 = List (first link) ptr.
-# Ret: a1 = First list value ptr.
+# Ret: a0 = First list value ptr.
 # SE:  Stack array changed.
 ##################################
 list_pop:
@@ -177,7 +177,7 @@ list_pop:
     # Check if empty list.
     mv a0, s1
     jal list_is_empty
-    bne a1, x0, list_pop_empty_err
+    bnez a0, list_pop_empty_err
 
     # Save link value to return.
     ld s2, link_val(s1)
@@ -207,7 +207,7 @@ list_pop_last:
     
 list_pop_end:
     # Load value to return.
-    mv a1, s2
+    mv a0, s2
 
     # Restore stack.
     ld s3, d3(sp)		# Restore s3.
@@ -264,7 +264,7 @@ list_push:
     # Check for empty list.
     mv a0, s1
     jal list_is_empty
-    bne a1, x0, list_push_empty_list
+    bnez a0, list_push_empty_list
     
     # List is not empty.
 
@@ -274,17 +274,17 @@ list_push:
     lwu t1, 0(s2)		# Get value-to-push ID.
     bne t0, t1, list_push_type_err	# Jump if instances not eq.
 
-    jal link_new	 # Get new link, to a1.
+    jal link_new	 # Get new link, to a0.
 
     # Move first link value into the new link.
     ld t0, link_val(s1)
-    sd t0, link_val(a1)
+    sd t0, link_val(a0)
 
     # Move first link next ptr into the new link.
     ld t0, link_next(s1)
-    sd t0, link_next(a1)
+    sd t0, link_next(a0)
 
-    sd a1, link_next(s1)	# Make first link next point to new link.
+    sd a0, link_next(s1)	# Make first link next point to new link.
 
     sd s2, link_val(s1)  	# Make first link value equal new value.
 
@@ -409,7 +409,7 @@ is_link_ret:
 
 # Accessor to get link value.
 # In:  a0 = ptr to link instance.
-# Ret: a1 = link value.
+# Ret: a0 = link value.
 # SE:  Nothing.
 ##################################
 link_get_val:
@@ -426,6 +426,7 @@ link_get_val:
     beqz a0, link_get_val_arg_err	# Branch if arg is not a link.
 
     ld a1, link_val(s1)		# Load link value to return.
+    ld a0, link_val(s1)		# Load link value to return.
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
@@ -446,7 +447,7 @@ link_get_val_arg_err_str:	.asciz	"link_get_val: Arg passed is not a link.\n"
 
 # Accessor to get link next.
 # In:  a0 = ptr to link instance.
-# Ret: a1 = link next.
+# Ret: a0 = link next.
 # SE:  Nothing.
 ##################################
 link_get_next:
@@ -462,7 +463,7 @@ link_get_next:
     jal is_link
     beqz a0, link_get_next_arg_err	# Branch if not link.
 
-    ld a1, link_next(s1)	# Load link next to return.
+    ld a0, link_next(s1)	# Load link next to return.
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
@@ -616,7 +617,7 @@ link_list_dealloc_arg_err_str:	.asciz	"list_list_dealloc: Arg passed is not a li
 
 # Return the length of a list.
 # In:  a0 = ptr to a link instance.
-# Ret: a1 = list length.
+# Ret: a0 = list length.
 # SE:  Nothing.
 ###################################
 list_len:
@@ -634,12 +635,12 @@ list_len:
     # Check for empty list.
     mv a0, s1
     jal list_is_empty
-    bne a1, x0, list_len_empty
+    bnez a0, list_len_empty
 
-    li a1, 0			# Init counter.
+    li a0, 0			# Init counter.
 
 list_len_loop_next:
-    addi a1, a1, 1		# Increment counter.
+    addi a0, a0, 1		# Increment counter.
 
     ld s1, link_next(s1)	# Load link next.
 
@@ -648,7 +649,7 @@ list_len_loop_next:
     j list_len_end
 
 list_len_empty:
-    li a1, 0			# Load length to return.
+    li a0, 0			# Load length to return.
 
 list_len_end:
     # Restore stack.
@@ -671,7 +672,7 @@ list_len_arg_err_str:	.asciz	"\nlist_len: Arg passed is not a link.\n"
 
 # Return 1 if a list is empty, otherwise return 0.
 # In:  a0 = ptr to a link instance.
-# Ret: a1 = 1 or 0.
+# Ret: a0 = 1 or 0.
 # SE:  Nothing.
 ###################################################
 list_is_empty:
@@ -687,13 +688,13 @@ list_is_empty:
     jal is_link
     beqz a0, list_is_empty_arg_err	# Error if not a link.
 
-    li a1, 0			# Init return to false.
+    li a0, 0			# Init return to false.
 
     # Check for empty list.
     ld t0, link_val(s1)
     bne t0, x0, list_is_empty_end
 
-    li a1, 1			# Set return to true.
+    li a0, 1			# Set return to true.
 
     # Check for next error.
     ld t0, link_next(s1)
