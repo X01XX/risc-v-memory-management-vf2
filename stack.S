@@ -169,7 +169,6 @@ stack_push:
     beqz a0, stack_push_arg_err
 
     ld t0, stack_tos(s1)	# Load stack tos.
-
     ld t1, stack_end(s1)	# Load end of stack.
 
     bgeu t0, t1, stack_full	# Check for stack full.
@@ -198,8 +197,6 @@ stack_push_arg_err:
 
 # Display stack full error message, then halt.
 stack_full:
-    mv s1, a0		# Save stack ptr.
-
     ld a0, stack_desc(s1)
     jal prtstr
 
@@ -211,7 +208,7 @@ stack_full:
 
 stack_push_arg_err_str:	.asciz	"stack_push: Arg passed is not a stack.\n"
 sf_str:			.asciz ": stack full\n"
-.align 4
+.align 8
 
 # Pop a value from the a stack.
 # In:  a0 - ptr to a stack.
