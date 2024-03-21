@@ -1,6 +1,8 @@
 # risc-v-memory-management-vf2
 A simple memory management method for VisionFive 2 assembler language.
 
+This project may make large Assembler Language programs more practical.
+
 Like the forth-memory-management, and risc-v-memory-management (rv emulator) repositories.
 
 Define pseudo-structs (pstructs) as a contiguous series of named/labeled field offsets.
@@ -31,3 +33,6 @@ The first word of every pstruct is set to a unique number, to indicate its type.
 
 Lists have to contain only one type of pstruct.
 
+Instances of stacks may be used without any corresponding array.
+
+If working with pstruct addresses on a stand-alone stack, it can be detected that the last copy of an address has been popped off the stack, and therefore it is ready to be deallocated.
