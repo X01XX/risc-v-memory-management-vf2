@@ -60,8 +60,6 @@ mem_init_ret:
 
     ret
 
-mem_init_err_str: .asciz "mem_init: Memory already initialized\n"
-.align 4
 
 # Allocate a block of memory.
 # In:  a0 = number words needed.
@@ -108,9 +106,6 @@ out_of_memory:
     li	a0, 2	# Load return code
     j endprg
 
-out_str:	.asciz "mem_alloc: Out of memory\n"
-invalid_str:	.asciz "mem_alloc: Invalid memory request\n"
-.align 8
 
 # Print the amount of memory that is left, to StdOut.
 # In:  Nothing.
@@ -166,12 +161,9 @@ mem_left:
 
     ret
 
-mem_left_str1:	.asciz	"Allocate-only memory: "
-mem_left_str2:	.asciz	" Words of "
-mem_left_str3:	.asciz	" left.\n"
-.align 4
 
 # Print inititalization error and exit.
+#######################################
 mem_not_inititalized:
     la a0, mni_str
     jal prtstr
@@ -179,8 +171,6 @@ mem_not_inititalized:
     li a0, 3
     j endprg
 
-mni_str: 	.asciz "Memory not initialized\n"
-.align 4
 
 # Return true if a given address is within memory.
 # In:  a0 - Address.
@@ -205,9 +195,28 @@ wm_ret_false:
     li a0, 0
     ret
 
+#### Immutable Data ####
+
 mem_ptr_addr:	.dword mem_ptr
 mem_start_addr:	.dword mem_start
 mem_end_addr:	.dword mem_end
+
+# mem_init:
+mem_init_err_str: .asciz "mem_init: Memory already initialized\n"
+
+# mem_alloc:
+out_str:	.asciz "mem_alloc: Out of memory\n"
+invalid_str:	.asciz "mem_alloc: Invalid memory request\n"
+
+# mem_left:
+mem_left_str1:	.asciz	"Allocate-only memory: "
+mem_left_str2:	.asciz	" Words of "
+mem_left_str3:	.asciz	" left.\n"
+
+# mem_not_inititalized:
+mni_str: 	.asciz "Memory not initialized\n"
+
+#### Mutable Data ####
 
 .data
 

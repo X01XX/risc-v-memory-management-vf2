@@ -170,9 +170,6 @@ invalid_num_words:
     li a0, 16	# Load return code.
     j endprg
 
-invalid_num_words_str:     .asciz "stack_array_new: Invalid number of words"
-invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"
-.align 4
 
 # Check if a ptr references a stack instance.
 # In:  a0 - Ptr to instance.
@@ -269,11 +266,6 @@ stack_array_print_arg_err:
     li a0, 17
     j endprg
 
-stk_adr_str:	.asciz "\nStack addr: "
-ary_adr_str:	.asciz "Array addr: "
-sa_adr_str:	.asciz "\nStack_Array addr: "
-stack_array_print_arg_err_str:	.asciz	"stack_array_print: Arg passed is not a stack array.\n"
-.align 4
 
 # Get an address of an array item from the stack.
 # In:  a0 - stack_array instance ptr.
@@ -312,8 +304,6 @@ stack_array_alloc_arg_err:
     li a0, 18
     j endprg
 
-stack_array_alloc_arg_err_str:	.asciz	"stack_array_alloc: Arg passed is not a stack array.\n"
-.align 4
 
 # Return an address of an array item to the stack.
 # In:  a0 - stack_array instance ptr.
@@ -390,9 +380,6 @@ stack_array_dealloc_arg_err:
     li a0, 19
     j endprg
 
-sca_err_str:	.asciz "stack_array_dealloc: Item already in stack\n"
-stack_array_dealloc_arg_err_str:	.asciz	"stack_array_dealloc: Arg passed is not a stack array.\n"
-.align 4
 
 # Print a summary of stack_array usage.
 # In: a0  - Ptr to a stack_array instance.
@@ -428,4 +415,26 @@ stack_array_left_arg_err:
     li a0, 21
     j endprg
 
+
+#### Immutable Data ####
+
+# stack_array_new:
+invalid_num_words_str:     .asciz "stack_array_new: Invalid number of words"
+invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"
+
+# stack_array_print:
+stk_adr_str:	.asciz "\nStack addr: "
+ary_adr_str:	.asciz "Array addr: "
+sa_adr_str:	.asciz "\nStack_Array addr: "
+stack_array_print_arg_err_str:	.asciz	"stack_array_print: Arg passed is not a stack array.\n"
+
+# stack_array_alloc:
+stack_array_alloc_arg_err_str:	.asciz	"stack_array_alloc: Arg passed is not a stack array.\n"
+
+# stack_array_dealloc:
+sca_err_str:	.asciz "stack_array_dealloc: Item already in stack\n"
+stack_array_dealloc_arg_err_str:	.asciz	"stack_array_dealloc: Arg passed is not a stack array.\n"
+
+# stack_array_left:
 stack_array_left_arg_err_str:	.asciz	"stack_array_left: Arg passed is not a stack array.\n"
+

@@ -76,9 +76,6 @@ element_init_ret:
 
     ret
 
-element_str:       .asciz  "Element"
-element_init_err_str: .asciz "Element already inititalized\n"
-.align 4
 
 # Return a new element.
 # In:  a0 = Ptr to name string.
@@ -161,8 +158,6 @@ element_dealloc_err:
     addi a0, x0, 35		# Load return code.
     j endprg
 
-element_dealloc_err_str:	.asciz  "element_dealloc: Arg passed is not an element.\n"
-.align 4
 
 # Check if a ptr references a element instance.
 # In: a0 = Ptr to instance.
@@ -232,8 +227,6 @@ element_get_name_arg_err:
     li a0, 36		# Load return code.
     j endprg
 
-element_get_name_arg_err_str:	.asciz  "element_get_name: Arg passed is not an element.\n"
-.align 8
 
 # Accessor to get element atomic_number.
 # In:  a0 = ptr to element instance.
@@ -269,8 +262,6 @@ element_get_atomic_number_arg_err:
     li a0, 37		# Load return code.
     j endprg
 
-element_get_atomic_number_arg_err_str:	.asciz  "element_get_atomic_number: Arg passed is not an element.\n"
-.align 4
 
 # Print the element stack.
 # In:  Nothing.
@@ -345,10 +336,6 @@ element_print_arg_err:
     li a0, 38		# Load return code.
     j endprg
 
-element_print_arg_err_str:	.asciz  "element_print: Arg passed is not an element.\n"
-el_name_str:	.asciz "Name: "
-el_an_str:	.asciz ", AN: "
-.align 4
 
 # Print an element linked list.
 # In:  a0 = ptr to a link.
@@ -422,8 +409,6 @@ element_list_print_arg_err:
     li a0, 39
     j endprg
 
-element_list_print_arg_err_str:	.asciz "element_list_print: Arg passed is not a link.\n"
-.align 4
 
 # Deallocate a element list.
 # In:  a0 = link instance ptr.
@@ -488,10 +473,9 @@ element_list_dealloc_arg_err:
     li a0, 40
     j endprg
 
-element_list_dealloc_arg_err_str:	.asciz	"element_list_dealloc: Arg passed is not a list.\n"
-.align 8
 
 # Print inititalization error and exit.
+#######################################
 element_sa_not_inititalized_err:
     la a0, element_sa_not_inititalized_err_str
     jal prtstr
@@ -499,8 +483,6 @@ element_sa_not_inititalized_err:
     li a0, 41
     j endprg
 
-element_sa_not_inititalized_err_str: 	.asciz "Element stack-array not initialized\n"
-.align 4
 
 # Print a summary of memory usage.
 # In:  Nothing.
@@ -524,8 +506,38 @@ element_left:
 
     ret
 
+#### Immutable Data ####
+
 element_sa_ptr_addr:   .dword element_sa_ptr
 
+# element_init:
+element_str:       .asciz  "Element"
+element_init_err_str: .asciz "Element already inititalized\n"
+
+# element_dealloc:
+element_dealloc_err_str:	.asciz  "element_dealloc: Arg passed is not an element.\n"
+
+# element_get_name:
+element_get_name_arg_err_str:	.asciz  "element_get_name: Arg passed is not an element.\n"
+
+# element_get_atomic_number:
+element_get_atomic_number_arg_err_str:	.asciz  "element_get_atomic_number: Arg passed is not an element.\n"
+
+# element_print:
+element_print_arg_err_str:	.asciz  "element_print: Arg passed is not an element.\n"
+el_name_str:	.asciz "Name: "
+el_an_str:	.asciz ", AN: "
+
+# element_list_print:
+element_list_print_arg_err_str:	.asciz "element_list_print: Arg passed is not a link.\n"
+
+# element_list_dealloc:
+element_list_dealloc_arg_err_str:	.asciz	"element_list_dealloc: Arg passed is not a list.\n"
+
+# element_sa_not_inititalized_err:
+element_sa_not_inititalized_err_str: 	.asciz "Element stack-array not initialized\n"
+
+#### Mutable Data ####
 .data
 
 # Storage for element stack_array struct ptr.

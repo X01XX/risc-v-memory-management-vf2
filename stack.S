@@ -109,8 +109,6 @@ stack_new_no_words_err:
     li a0, 4	# Load return code
     j endprg
 
-stack_new_no_words_err_str:    	.asciz "Invalid number of words "
-.align 4
 
 # Check if a ptr references a stack instance.
 # In:  a0 - Ptr to instance.
@@ -206,9 +204,6 @@ stack_full:
     li a0, 6	# Load return code
     j endprg
 
-stack_push_arg_err_str:	.asciz	"stack_push: Arg passed is not a stack.\n"
-sf_str:			.asciz ": stack full\n"
-.align 8
 
 # Pop a value from the a stack.
 # In:  a0 - ptr to a stack.
@@ -267,9 +262,6 @@ stack_empty:
     li a0, 8	# Load return code
     j endprg
  
-stack_pop_arg_err_str:	.asciz	"stack_pop: Arg passed is not a stack.\n"
-stack_empty_str:		.asciz ": stack empty\n"
-.align 4
 
 # Check a stack name string, ended with 0, for GT 0 length and
 # unprintable characters, else exit.
@@ -316,9 +308,6 @@ name_invalid_char:
     li a0, 10	# Load return code
     j endprg
 
-check_name_empty_str:		.asciz "stack_new: Empty string for stack name?"
-check_name_char_str: 		.asciz "stack_new: Invalid character in stack name?\n"
-.align 4
 
 # Print the stack name.
 # In:  a0 - Ptr to stack.
@@ -358,17 +347,13 @@ stack_print_name_arg_err:
     li a0, 11
     j endprg
 
-stack_print_name_arg_err_str:	.asciz	"stack_print_name: Arg passed is not a stack.\n"
-stack_print_name_prefix:	.asciz "\nStack Name: "
-.align d2
-
 # Print a stack.
 # In:  a0, ptr to a stack struct.
 # Ret: Nothing.
 # SE:  Text printed to StdOut.
 ##################################
 stack_print:
-   # Configure stack
+    # Configure stack
     addi sp, sp, d4n	# Advance stack pointer.
     sd ra, 0(sp)	# Save ra.
     sd s1, d1(sp)	# Save s1.
@@ -410,8 +395,9 @@ stack_print:
 
     jal prtnl
 
-   # Loop to print eack active item.
+   # Loop to print each active item.
     ld s3, stack_tos(s1)	# Load stack tos.
+
 sp_loop_next:
     bgeu s2, s3, sp_loop_end	# Exit loop if at the end of the stack.
 
@@ -440,10 +426,6 @@ stack_print_arg_err:
     li a0, 12
     j endprg
 
-stack_print_arg_err_str:	.asciz	"stack_print: Arg passed is not a stack.\n"
-stack_print_num_str:	.asciz "Max Items: "
-stack_print_items_str:	.asciz "Number Available Items: "
-.align d2
 
 # Print summary of stack usage.
 # In:  a0 - ptr to a stack instance.
@@ -521,13 +503,6 @@ stack_left_arg_err:
     li a0, 13
     j endprg
 
-stack_left_arg_err_str:	.asciz	"stack_left: Arg passed is not a stack.\n"
-sl_str1:		.asciz "Stack: "
-sl_str2:		.asciz ",  "
-sl_str3:		.asciz " item"
-sl_str4:		.asciz " of "
-sl_str5:		.asciz " left.\n"
-.align 4
 
 # Check a stack for a value.
 # In:  a0, ptr to a stack struct.
@@ -559,4 +534,41 @@ sca_loop_end:
 sca_true:
     li a0, 1			# Load a1 with true indicator.
     ret
+
+#### Immutable Data ####
+
+# stack_new:
+stack_new_no_words_err_str:    	.asciz "Invalid number of words "
+
+# stack_push:
+stack_push_arg_err_str:	.asciz	"stack_push: Arg passed is not a stack.\n"
+sf_str:			.asciz ": stack full\n"
+
+# stack_pop:
+stack_pop_arg_err_str:	.asciz	"stack_pop: Arg passed is not a stack.\n"
+stack_empty_str:		.asciz ": stack empty\n"
+
+# check_name:
+check_name_empty_str:		.asciz "stack_new: Empty string for stack name?"
+check_name_char_str: 		.asciz "stack_new: Invalid character in stack name?\n"
+
+
+#### Immutable Data ####
+
+# stack_print_name:
+stack_print_name_arg_err_str:	.asciz	"stack_print_name: Arg passed is not a stack.\n"
+stack_print_name_prefix:	.asciz "\nStack Name: "
+
+# stack_print:
+stack_print_arg_err_str:	.asciz	"stack_print: Arg passed is not a stack.\n"
+stack_print_num_str:	.asciz "Max Items: "
+stack_print_items_str:	.asciz "Number Available Items: "
+
+# stack_left:
+stack_left_arg_err_str:	.asciz	"stack_left: Arg passed is not a stack.\n"
+sl_str1:		.asciz "Stack: "
+sl_str2:		.asciz ",  "
+sl_str3:		.asciz " item"
+sl_str4:		.asciz " of "
+sl_str5:		.asciz " left.\n"
 

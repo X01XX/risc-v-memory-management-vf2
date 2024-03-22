@@ -86,9 +86,6 @@ link_init_ret:
 
     ret
 
-link_str:		.asciz  "Links"
-link_init_err_str:	.asciz "Link already initialized\n"
-.align 4
 
 # Return a new link.
 # In:  a0 = Link value.
@@ -234,9 +231,6 @@ list_pop_empty_err:
     li a0, 23	# Load return code.
     j endprg
 
-list_pop_arg_err_str:	.asciz	"list_pop: Arg passed is not a link.\n"
-list_pop_empty_err_str:	.asciz	"list_pop: empty list.\n"
-.align 4
 
 # Push a value onto a list of structs, sharing the same ID value.
 # Preserve the first link, that the caller expects is the start of the list.
@@ -318,9 +312,6 @@ list_push_type_err:
     li a0, 25
     j endprg
 
-list_push_arg_err_str:	.asciz	"list_push: Arg passed is not a link.\n"
-list_push_type_err_str:	.asciz	"list_push: Value passed is different than other items.\n"
-.align 4
 
 # Deallocate a link.
 # Deallocate a link.
@@ -359,7 +350,6 @@ link_dealloc:
 
     ret
 
-.align 4
 # Print error string, exit.
 list_dealloc_arg_err:
     la a0, list_dealloc_arg_err_str
@@ -368,8 +358,6 @@ list_dealloc_arg_err:
     li a0, 26
     j endprg
 
-list_dealloc_arg_err_str:	.asciz	"\nlist_dealloc: Arg passed is not a link.\n"
-.align 4
 
 # Check if a ptr references a link instance.
 # In:  a0 - Ptr to instance.
@@ -442,8 +430,6 @@ link_get_val_arg_err:
     li a0, 27
     j endprg
 
-link_get_val_arg_err_str:	.asciz	"link_get_val: Arg passed is not a link.\n"
-.align 4
 
 # Accessor to get link next.
 # In:  a0 = ptr to link instance.
@@ -479,8 +465,6 @@ link_get_next_arg_err:
     li a0, 28
     j endprg
 
-link_get_next_arg_err_str:	.asciz	"\nlink_get_next: Arg passed is not a link.\n"
-.align 4
 
 # Print the link stack.
 # In:  Nothing.
@@ -560,10 +544,6 @@ link_print_arg_err:
     li a0, 29
     j endprg
 
-link_print_val_str:	.asciz "[Link: Value: "
-link_print_nxt_str:	.asciz ", Next: "
-link_print_arg_err_str:		.asciz	"\nlink_print: Arg passed is not a link.\n"
-.align 4
 
 # Deallocate a linked list.
 # Clear values from the list before calling this.
@@ -612,8 +592,6 @@ link_list_dealloc_arg_err:
     li a0, 30
     j endprg
 
-link_list_dealloc_arg_err_str:	.asciz	"list_list_dealloc: Arg passed is not a link.\n"
-.align 4
 
 # Return the length of a list.
 # In:  a0 = ptr to a link instance.
@@ -667,8 +645,6 @@ list_len_arg_err:
     li a0, 31
     j endprg
 
-list_len_arg_err_str:	.asciz	"\nlist_len: Arg passed is not a link.\n"
-.align 4
 
 # Return 1 if a list is empty, otherwise return 0.
 # In:  a0 = ptr to a link instance.
@@ -725,11 +701,9 @@ list_is_empty_arg_err:
     li a0, 32
     j endprg
 
-list_is_empty_arg_err_str:	.asciz	"\nlist_is_empty: Arg passed is not a link.\n"
-list_is_empty_next_err_str:	.asciz "\nlist_is_empty: Link empty, but next is non-zero\n"
-.align 4
 
 # Print inititalization error, exit.
+####################################
 link_sa_not_inititalized:
     la a0, lnk_str
     jal prtstr
@@ -737,8 +711,6 @@ link_sa_not_inititalized:
     li a0, 34
     j endprg
 
-lnk_str: 	.asciz "Link stack-array not initialized\n"
-.align 4
 
 # Print a summary of memory usage.
 # In:  Nothing.
@@ -764,8 +736,51 @@ link_left:
 
     ret
 
-# Let the linker stoer the address of link_sa_ptr.
+#### Immutable Data ####
+
+# Let the linker store the address of link_sa_ptr.
 link_sa_ptr_addr:   .dword link_sa_ptr
+
+# link_init:
+link_str:		.asciz  "Links"
+link_init_err_str:	.asciz "Link already initialized\n"
+
+# list_pop:
+list_pop_arg_err_str:	.asciz	"list_pop: Arg passed is not a link.\n"
+list_pop_empty_err_str:	.asciz	"list_pop: empty list.\n"
+
+# list_push:
+list_push_arg_err_str:	.asciz	"list_push: Arg passed is not a link.\n"
+list_push_type_err_str:	.asciz	"list_push: Value passed is different than other items.\n"
+
+# link_dealloc:
+list_dealloc_arg_err_str:	.asciz	"\nlist_dealloc: Arg passed is not a link.\n"
+
+# link_get_val:
+link_get_val_arg_err_str:	.asciz	"link_get_val: Arg passed is not a link.\n"
+
+# link_get_next:
+link_get_next_arg_err_str:	.asciz	"\nlink_get_next: Arg passed is not a link.\n"
+
+# link_print:
+link_print_val_str:	.asciz "[Link: Value: "
+link_print_nxt_str:	.asciz ", Next: "
+link_print_arg_err_str:		.asciz	"\nlink_print: Arg passed is not a link.\n"
+
+# link_list_dealloc:
+link_list_dealloc_arg_err_str:	.asciz	"list_list_dealloc: Arg passed is not a link.\n"
+
+# list_len:
+list_len_arg_err_str:	.asciz	"\nlist_len: Arg passed is not a link.\n"
+
+# list_is_empty:
+list_is_empty_arg_err_str:	.asciz	"\nlist_is_empty: Arg passed is not a link.\n"
+list_is_empty_next_err_str:	.asciz "\nlist_is_empty: Link empty, but next is non-zero\n"
+
+# link_sa_not_inititalized:
+lnk_str: 	.asciz "Link stack-array not initialized\n"
+
+#### Mutable Data ####
 
 .data 
 
