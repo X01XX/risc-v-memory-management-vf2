@@ -4,6 +4,8 @@
 
 .text
 
+.include "macros.S"
+
 # Doubleword sizes:
 	.equ d1, 8
 	.equ d2, 16
@@ -65,7 +67,7 @@ stack_new:
     jal check_name		# Check stack name is OK.
 
     li a0, stack_words		# Load number of stack struct words.
-    jal mem_alloc		# Get stack struct memory ptr into a0.
+    excall t0, mem_alloc	# Get stack struct memory ptr into a0.
     mv s3, a0			# Save stack struct ptr.
 
     li t0, stack_id_val		# Store stack struct id.
@@ -73,7 +75,7 @@ stack_new:
 
     mv a0, s1			# Load stack size.
     slli a0, a0, 1		# Multiply to change number items into words where there are 2 words per dword address.
-    jal mem_alloc		# Get stack memory ptr into a0.
+    excall t0, mem_alloc	# Get stack memory ptr into a0.
 
     sd a0, stack_start(s3)	# Store stack memory ptr in stack struct.
     sd a0, stack_tos(s3)	# Store stack tos ptr in stack struct.
@@ -100,14 +102,14 @@ stack_new_no_words_err:
     mv s3, a0		# Save number words.
 
     la a0, stack_new_no_words_err_str
-    jal prtstr
+    excall t0, prtstr
 
     mv a0, s3		# Load number words.
-    jal prtdec		# Print number as base 10.
-    jal prtnl
+    excall t0, prtdec	# Print number as base 10.
+    excall t0, prtnl
 
     li a0, 4	# Load return code
-    j endprg
+    excall t0, endprg
 
 
 # Check if a ptr references a stack instance.
@@ -124,7 +126,7 @@ is_stack:
 
     mv s1, a0		# Save addr.
 
-    jal mem_within	# Avoid a segmentation error in next lwu command.
+    excall t0, mem_within	# Avoid a segmentation error in next lwu command.
     beqz a0, is_stack_ret_0
 
     lwu t0, stack_id(s1)	# Load instance ID val.
@@ -188,21 +190,21 @@ stack_push:
 # Print error, exit.
 stack_push_arg_err:
     la a0, stack_push_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 5
-    j endprg
+    excall t0, endprg
 
 # Display stack full error message, then halt.
 stack_full:
     ld a0, stack_desc(s1)
-    jal prtstr
+    excall t0, prtstr
 
     la a0, sf_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 6	# Load return code
-    j endprg
+    excall t0, endprg
 
 
 # Pop a value from the a stack.
@@ -244,23 +246,23 @@ stack_pop:
 # Print error, exit.
 stack_pop_arg_err:
     la a0, stack_pop_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 7
-    j endprg
+    excall t0, endprg
 
 # Display stack empty error message, then halt.
 stack_empty:
     mv a0, s1		# Save stack ptr.
 
     ld a0, stack_desc(s1)
-    jal prtstr
+    excall t0, prtstr
 
     la a0, stack_empty_str
-    jal prtstr
+    excall t0, prtstr
  
     li a0, 8	# Load return code
-    j endprg
+    excall t0, endprg
  
 
 # Check a stack name string, ended with 0, for GT 0 length and
@@ -296,17 +298,17 @@ check_name_loop_done:
 
 name_too_short:
     ld a0, check_name_empty_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 9	# Load return code
-    j endprg
+    excall t0, endprg
 
 name_invalid_char:
     ld a0, check_name_char_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 10	# Load return code
-    j endprg
+    excall t0, endprg
 
 
 # Print the stack name.
@@ -327,11 +329,11 @@ stack_print_name:
 
     # Print stack name prefix.
     la a0, stack_print_name_prefix
-    jal prtstr
+    excall t0, prtstr
 
     # Print stack name.
     ld a0, stack_desc(s1)
-    jal prtstr
+    excall t0, prtstr
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
@@ -342,10 +344,10 @@ stack_print_name:
 # Print error, exit.
 stack_print_name_arg_err:
     la a0, stack_print_name_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 11
-    j endprg
+    excall t0, endprg
 
 # Print a stack.
 # In:  a0, ptr to a stack struct.
@@ -368,10 +370,10 @@ stack_print:
     mv a0, s1
     jal stack_print_name
 
-    jal prtnl
+    excall t0, prtnl
 
     la a0, stack_print_num_str
-    jal prtstr
+    excall t0, prtstr
 
     ld s2, stack_start(s1)	# Load stack start.
 
@@ -379,21 +381,21 @@ stack_print:
 
     sub t3, s3, s2		# Get dif in bytes.
     srli a0, t3, dbyts		# Divide by word bytes.
-    jal prtdec			# Print as base 10.
+    excall t0, prtdec		# Print as base 10.
 
-    jal prtnl
+    excall t0, prtnl
 
     la a0, stack_print_items_str
-    jal prtstr
+    excall t0, prtstr
 
     ld t1, stack_start(s1)	# Load stack start.
     ld t2, stack_tos(s1)	# Load stack tos.
 
     sub t0, t2, t1		# Get bytes difference.
     srli a0, t0, dbyts		# Divide by dword bytes.
-    jal prtdec			# Print number active items.
+    excall t0, prtdec		# Print number active items.
 
-    jal prtnl
+    excall t0, prtnl
 
    # Loop to print each active item.
     ld s3, stack_tos(s1)	# Load stack tos.
@@ -402,9 +404,9 @@ sp_loop_next:
     bgeu s2, s3, sp_loop_end	# Exit loop if at the end of the stack.
 
     ld a0, 0(s2)    		# load next item
-    jal prthex			# Print item in hex.
+    excall t0, prthex		# Print item in hex.
 
-    jal prtnl
+    excall t0, prtnl
 
     addi s2, s2, d1		# Point to next item.
     j sp_loop_next
@@ -421,10 +423,10 @@ sp_loop_end:
 # Print error, exit.
 stack_print_arg_err:
     la a0, stack_print_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 12
-    j endprg
+    excall t0, endprg
 
 
 # Print summary of stack usage.
@@ -446,13 +448,13 @@ stack_left:
     beqz a0, stack_left_arg_err
 
     la a0, sl_str1	# Print Stack:
-    jal prtstr
+    excall t0, prtstr
 
     ld a0, stack_desc(s1)	# Print stack name.
-    jal prtstr
+    excall t0, prtstr
 
     la a0, sl_str2		# Print comma space.
-    jal prtstr
+    excall t0, prtstr
 
     ld t0, stack_start(s1)	# Load stack start.
     ld t1, stack_tos(s1)	# Load stack tos.
@@ -461,31 +463,31 @@ stack_left:
     srli s2, t1, dbyts		# Divide by dword bytes.
 
     mv a0, s2
-    jal prtdec			# Print items left as base 10.
+    excall t0, prtdec		# Print items left as base 10.
 
     # Print "item(s) of"
     la a0, sl_str3		# Print "item"
-    jal prtstr
+    excall t0, prtstr
 
     li t0, 1
     beq s2, t0, sl_skip_plural
 
     li a0, 's'
-    jal prtchr			# Print "s"
+    excall t0, prtchr		# Print "s"
 
 sl_skip_plural:
     la a0, sl_str4		# Print " of "
-    jal prtstr
+    excall t0, prtstr
 
     ld t0, stack_start(s1)	# Load stack start.
     ld t1, stack_end(s1)	# Load stack end.
 
     sub t1, t1, t0		# Get dif in bytes.
     srli a0, t1, dbyts		# Divide by dword bytes.
-    jal prtdec			# Print total items as base 10.
+    excall t0, prtdec		# Print total items as base 10.
 
     la a0, sl_str5		# Print "left.".
-    jal prtstr
+    excall t0, prtstr
 
     # Restore stack.
     ld s2, d2(sp)               # Restore s2.
@@ -498,10 +500,10 @@ sl_skip_plural:
 # Print error, exit.
 stack_left_arg_err:
     la a0, stack_left_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 13
-    j endprg
+    excall t0, endprg
 
 
 # Check a stack for a value.
@@ -572,3 +574,13 @@ sl_str3:		.asciz " item"
 sl_str4:		.asciz " of "
 sl_str5:		.asciz " left.\n"
 
+# External function addresses.
+##############################
+prtstr_addr:		.dword prtstr
+prtdec_addr:		.dword prtdec
+prthex_addr:		.dword prthex
+prtchr_addr:		.dword prtchr
+prtnl_addr:		.dword prtnl
+endprg_addr:		.dword endprg
+mem_alloc_addr:		.dword mem_alloc
+mem_within_addr:	.dword mem_within

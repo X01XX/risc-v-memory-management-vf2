@@ -13,6 +13,10 @@
 #
 # See stack_array struct, below.
 
+.text
+
+.include "macros.S"
+
 # Comment out these, to make deallocation faster, but harder to notice and track down logical errors.
 	.equ zero_memory, 1
 	.equ check_for_dups, 1
@@ -84,9 +88,9 @@ stack_array_new:
     mv s3, a2		# Save ptr to description.
 
     # Allocate sa struct.
-    li	a0, sa_words	# Load number words in SA struct.
-    jal mem_alloc	# Get ptr to array into a0.
-    mv s7, a0		# Save sa struct ptr.
+    li	a0, sa_words		# Load number words in SA struct.
+    excall t0, mem_alloc	# Get ptr to array into a0.
+    mv s7, a0			# Save sa struct ptr.
 
     # Set struct ID.
     li t0, stack_array_id_val
@@ -99,9 +103,9 @@ stack_array_new:
     sh s2, sa_item_words(s7)
 
     # Allocate new stack.
-    mv	a0, s1		# Load number of items.
-    mv	a1, s3		# Load ptr to description.
-    jal stack_new	# Get ptr to stack in a0.
+    mv	a0, s1			# Load number of items.
+    mv	a1, s3			# Load ptr to description.
+    excall t0, stack_new	# Get ptr to stack in a0.
 
     # Save stack struct ptr to SA struct.
     sd  a0, sa_stack_ptr(s7)
@@ -109,8 +113,8 @@ stack_array_new:
     # Allocate array.
 
     # Calc array words.
-    mul a0, s1, s2	# Get number of words of array memory needed.
-    jal mem_alloc	# a0 contains number words needed.  Get memory allocation for array into a0.
+    mul a0, s1, s2		# Get number of words of array memory needed.
+    excall t0, mem_alloc	# a0 contains number words needed.  Get memory allocation for array into a0.
 
     # Save array ptr to struct.
     sd  a0, sa_array_ptr(s7)
@@ -130,7 +134,7 @@ loop:
     # Push next item ptr to stack.  Need a0, ptr to stack, a1 value to push.
     mv a0, s4		# Load stack ptr for call.
     mv a1, s5		# Load array item ptr for call.
-    jal stack_push
+    excall t0, stack_push
     
     add s5, s5, s6	# Point to next array item.
 
@@ -157,18 +161,18 @@ ret:
 # Display invalid request, then halt.
 invalid_num_items:
     la a0, invalid_num_items_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 15	# Load return code.
-    j endprg
+    excall t0, endprg
 
 # Display invalid request, then halt.
 invalid_num_words:
     la a0, invalid_num_words_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 16	# Load return code.
-    j endprg
+    excall t0, endprg
 
 
 # Check if a ptr references a stack instance.
@@ -185,7 +189,7 @@ is_stack_array:
 
     mv s1, a0		# Save addr.
 
-    jal mem_within	# Avoid a segmentation error in next lwu command.
+    excall t0, mem_within	# Avoid a segmentation error in next lwu command.
     beqz a0, is_stack_array_ret_0
 
     lwu t0, sa_id(s1)		# Load instance ID val.
@@ -224,33 +228,33 @@ stack_array_print:
 
     # Print stack_array address prefix.
     la a0, sa_adr_str	# Load addr of prefix string.
-    jal prtstr
+    excall t0, prtstr
 
     # Print stack_array address.
     mv a0, s1
-    jal prthex		# Print addr.
+    excall t0, prthex		# Print addr.
 
     # Print stack address prefix.
     la a0, stk_adr_str
-    jal prtstr
+    excall t0, prtstr
 
     # Print stack address.
     ld a0, sa_stack_ptr(s1)
-    jal prthex
+    excall t0, prthex
 
     # Print stack.
     ld a0, sa_stack_ptr(s1)
-    jal stack_print
+    excall t0, stack_print
     
     # Print array address prefix.
     la a0, ary_adr_str
-    jal prtstr
+    excall t0, prtstr
 
     # Print array address.
     ld a0, sa_array_ptr(s1)
-    jal prthex
+    excall t0, prthex
 
-    jal prtnl
+    excall t0, prtnl
 
     # Cleanup stack.
     ld ra, 0(sp)	# Restore ra.
@@ -261,10 +265,10 @@ stack_array_print:
 
 stack_array_print_arg_err:
     la a0, stack_array_print_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 17
-    j endprg
+    excall t0, endprg
 
 
 # Get an address of an array item from the stack.
@@ -288,7 +292,7 @@ stack_array_alloc:
     ld a0, sa_stack_ptr(s1)
 
     # Get item from stack, into a0.
-    jal stack_pop
+    excall t0, stack_pop
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
@@ -299,10 +303,10 @@ stack_array_alloc:
 
 stack_array_alloc_arg_err:
     la a0, stack_array_alloc_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 18
-    j endprg
+    excall t0, endprg
 
 
 # Return an address of an array item to the stack.
@@ -330,7 +334,7 @@ stack_array_dealloc:
     # This section can be commented out for greater speed.
     ld a0, sa_stack_ptr(s1)
     mv a1, s2
-    jal stack_contains
+    excall t0, stack_contains
     li t0, 1
     beq a0, t0, sad_err
 .endif
@@ -352,7 +356,7 @@ sad_loop:
     # Return item to stack.
     ld a0, sa_stack_ptr(s1)
     mv a1, s2
-    jal stack_push
+    excall t0, stack_push
 
     # Cleanup stack.
     ld ra, 0(sp)	# Restore ra.
@@ -365,20 +369,20 @@ sad_loop:
 sad_err:
     mv s1, a0		# Save stack ptr.
 
-    jal stack_print_name
+    excall t0, stack_print_name
 
     la a0, sca_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 20	# Load return code
-    j endprg
+    excall t0, endprg
 
 stack_array_dealloc_arg_err:
     la a0, stack_array_dealloc_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 19
-    j endprg
+    excall t0, endprg
 
 
 # Print a summary of stack_array usage.
@@ -399,7 +403,7 @@ stack_array_left:
     beqz a0, stack_array_left_arg_err
 
     ld a0, sa_stack_ptr(s1)	# Get stack addr.
-    jal stack_left
+    excall t0, stack_left
 
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
@@ -410,11 +414,29 @@ stack_array_left:
 
 stack_array_left_arg_err:
     la a0, stack_array_left_arg_err_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 21
-    j endprg
+    excall t0, endprg
 
+
+# External function addresses.
+##############################
+prtstr_addr:		.dword prtstr
+prtdec_addr:		.dword prtdec
+prthex_addr:		.dword prthex
+prtchr_addr:		.dword prtchr
+prtnl_addr:		.dword prtnl
+endprg_addr:		.dword endprg
+mem_alloc_addr:		.dword mem_alloc
+mem_within_addr:	.dword mem_within
+stack_push_addr:	.dword stack_push
+stack_pop_addr:		.dword stack_pop
+stack_left_addr:	.dword stack_left
+stack_print_name_addr:	.dword stack_print_name
+stack_contains_addr:	.dword stack_contains
+stack_print_addr:	.dword stack_print
+stack_new_addr:		.dword stack_new
 
 #### Immutable Data ####
 
