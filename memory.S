@@ -7,6 +7,16 @@
 # Memory cannot be deallocated.
 .text
 
+# A macro to call a function external to a .S file.
+# It assumes there is a dword in the .text section
+# with a _addr suffix, filled in with the needed
+# address by the linker.
+.MACRO excall register, prefix, suffix=_addr
+    la \register, \prefix\suffix
+    ld \register, 0(\register)
+    jalr \register
+.ENDM
+
 # Set available memory.
 	.equ number_bytes, 8000
 
@@ -51,7 +61,7 @@ mem_init:
 
 mem_init_err:
     la a0, mem_init_err_str
-    jal prtstr
+    excall t0, prtstr
 
 mem_init_ret:
     # Cleanup stack.
@@ -93,18 +103,18 @@ mem_alloc:
 invalid_request:
 
     la a0, invalid_str	# Load addr of string.
-    jal prtstr
+    excall t0, prtstr
     
     li a0, 1	# Load return code
-    j endprg
+    excall t0, endprg
     
 # Display out of memory error, then halt.
 out_of_memory:
     la a0, out_str	# Load addr of string.
-    jal prtstr
+    excall t0, prtstr
     
     li	a0, 2	# Load return code
-    j endprg
+    excall t0, endprg
 
 
 # Print the amount of memory that is left, to StdOut.
@@ -119,7 +129,7 @@ mem_left:
     
     # Print prefix.
     la a0, mem_left_str1
-    jal prtstr
+    excall t0, prtstr
 
     # Get pointer to next free block.
     la t0, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
@@ -135,10 +145,10 @@ mem_left:
     srli t3, t3, wbyts	# Convert to words.
     
     mv a0, t3		# Load number to print
-    jal prtdec
+    excall t0, prtdec
  
     la a0, mem_left_str2	# Load addr of string.
-    jal prtstr
+    excall t0, prtstr
     
     la t0, mem_start_addr	# Load ptr to memory block.
     ld t0, 0(t0)
@@ -150,10 +160,10 @@ mem_left:
     srli t3, t3, wbyts	# Convert to words.
     
     mv a0, t3		# Load number to print.
-    jal prtdec		# Print it in base 10.
+    excall t0, prtdec
   
     la a0, mem_left_str3	# Load addr of string.
-    jal prtstr
+    excall t0, prtstr
     
     # Restore stack.
     ld ra, 0(sp)		# Restore ra.
@@ -166,10 +176,10 @@ mem_left:
 #######################################
 mem_not_inititalized:
     la a0, mni_str
-    jal prtstr
+    excall t0, prtstr
 
     li a0, 3
-    j endprg
+    excall t0, endprg
 
 
 # Return true if a given address is within memory.
@@ -215,6 +225,12 @@ mem_left_str3:	.asciz	" left.\n"
 
 # mem_not_inititalized:
 mni_str: 	.asciz "Memory not initialized\n"
+
+# External function addresses.
+##############################
+prtstr_addr:	.dword prtstr
+prtdec_addr:	.dword prtdec
+endprg_addr:	.dword endprg
 
 #### Mutable Data ####
 
