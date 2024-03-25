@@ -1,5 +1,5 @@
 # risc-v-memory-management-vf2
-A simple memory management method for VisionFive 2 assembler language.
+A simple memory management method for progams written in GNU 64-bit Assembler Language on a VisionFive 2 SBC.
 
 This project may make large Assembler Language programs more practical.
 
