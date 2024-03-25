@@ -3,8 +3,6 @@ A simple memory management method for VisionFive 2 assembler language.
 
 This project may make large Assembler Language programs more practical.
 
-Like the forth-memory-management, and risc-v-memory-management (rv emulator) repositories.
-
 Define pseudo-structs (pstructs) as a contiguous series of named/labeled field offsets.
 
 Define an array of pstructs, then allocate and deallocate pstructs from the array.
@@ -17,7 +15,7 @@ The special-purpose stack is initialized with the address of each array pstruct.
 
 Allocation and deallocation is fairly fast because it involves only popping or pushing the stack.
 
-The capacity of the stack-array, is configurable at instance creation.
+The capacity of each stack-array, is configurable at instance creation.
 
 Within the limit of the stack-array capacity of pstructs (which you set), allocated at the same time, an infinite number of allocations and deallocations are possible.
 
