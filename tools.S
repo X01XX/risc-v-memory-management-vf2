@@ -218,13 +218,16 @@ prtstr:
     sd s1, d1(sp)	# Save s1.
 
     mv s1, a0		# Save ptr to string.
-    jal strlen		# String len to a2.
+    jal strlen		# String len to a0.
+
+    # Print string.
+    mv a2, a0
     addi a0, x0, 1	# StdOut
     mv a1, s1		# Load addr of string.
     addi a7, x0, 64	# Linux write.
     ecall
 
-  # Restore stack.
+    # Restore stack.
     ld s1, d1(sp)	# Restore s1.
     ld ra, 0(sp)	# Restore ra.
     addi sp, sp, d2     # Restore sp.
@@ -242,7 +245,7 @@ endprg:
 
 # Return the length of a string.
 # In:  a0 = ptr to string.
-# Ret: a2 = length.
+# Ret: a0 = length.
 # SE:  Nothing.
 # Note: returns on first non-printable character.
 #################################################
@@ -262,6 +265,7 @@ sl_loop_next:
     bltu t0, t2, sl_loop_done	# Check for low invalid chacacter.
 
     bgtu t0, t3, sl_loop_done 	# Check for high invalid character.
+
 sl_skip_check:
 
     addi t1, t1, 1		# Point at next byte.
@@ -270,6 +274,7 @@ sl_skip_check:
     j sl_loop_next
 
 sl_loop_done:
+    mv a0, a2
     ret
 
 nl:   .ascii "\n"

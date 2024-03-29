@@ -36,7 +36,7 @@
 ###########################################
 mem_init:
     # Configure stack.
-    addi sp, sp, d1n	# Advance sp for stack frame.
+    addi sp, sp, d1n	# Advance sp for stack frame. 
     sd ra, 0(sp)	# Save ra.
 
     la t1, mem_ptr_addr	# Load addr of word storing the ptr to the next free word.
@@ -61,7 +61,6 @@ mem_init_ret:
     addi sp, sp, d1	# Restore sp.
 
     ret
-
 
 # Allocate a block of memory.
 # In:  a0 = number words needed.

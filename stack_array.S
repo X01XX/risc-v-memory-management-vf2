@@ -42,7 +42,7 @@
 # Struct stack_array (sa):
 	.equ	sa_id,		0	# 4 bytes, 1 word.
 	.equ	sa_stack_ptr,   4	# 8 bytes, 2 words. Ptr to stack struct.
-	.equ 	sa_array_ptr,  12	# 8 bytes, 2 words. Ptr to array.
+	.equ 	sa_array_ptr,  12	# 8 bytes, 2 words. Ptr to array memory.
 	.equ	sa_num_items,  20	# 2 bytes, 1/2 word. Max number items.
 	.equ	sa_item_words, 22	# 2 bytes, 1/2 word. Number words per item.
 	.equ	sa_words, 6		# Number words in this struct.
@@ -69,8 +69,6 @@
 # SE:  Local memory available decreases.
 ###################################################################################
 stack_array_new:
-    blez a0, invalid_num_items # Check for zero, or negative, number of items.
-    blez a1, invalid_num_words # Check for zero, or negative, number of words.
 
     # Configure stack.
     addi sp, sp, d8n	# Advance sp for stack frame.
@@ -86,6 +84,16 @@ stack_array_new:
     mv s1, a0		# Save number items.
     mv s2, a1		# Save number words per item.
     mv s3, a2		# Save ptr to description.
+
+    # Check number items.
+    beqz s1, stack_array_new_num_items_err
+    li t0, 0xFFFF
+    bgt s1, t0, stack_array_new_num_items_err
+
+    # Check number words per item.
+    beqz s2, stack_array_new_num_words_err
+    li t0, 0xFFFF
+    bgt s2, t0, stack_array_new_num_words_err
 
     # Allocate sa struct.
     li	a0, sa_words		# Load number words in SA struct.
@@ -138,9 +146,9 @@ loop:
     
     add s5, s5, s6	# Point to next array item.
 
-    # Check if done.
     addi s1, s1, -1	# Decrement number items.
-    bgtz s1, loop	# Return if zero, no items left.
+
+    bgtz s1, loop	# Continue if more items to fill.
     
 ret:
     mv a0, s7		# Load sa ptr to return.
@@ -158,17 +166,15 @@ ret:
 
     ret			# Return a0
 
-# Display invalid request, then halt.
-invalid_num_items:
-    la a0, invalid_num_items_str
+stack_array_new_num_items_err:
+    la a0, stack_array_new_num_items_err_str
     excall t0, prtstr
 
     li a0, 15	# Load return code.
     excall t0, endprg
 
-# Display invalid request, then halt.
-invalid_num_words:
-    la a0, invalid_num_words_str
+stack_array_new_num_words_err:
+    la a0, stack_array_new_num_words_err_str
     excall t0, prtstr
 
     li a0, 16	# Load return code.
@@ -189,15 +195,18 @@ is_stack_array:
 
     mv s1, a0		# Save addr.
 
+    # Check its in local memory.
+    mv a0, s1
     excall t0, mem_within	# Avoid a segmentation error in next lwu command.
     beqz a0, is_stack_array_ret_0
 
+    # Check struct ID.
     lwu t0, sa_id(s1)		# Load instance ID val.
     li t1, stack_array_id_val	# Load expected ID val.
-
     bne t0, t1, is_stack_array_ret_0
 
     li a0, 1
+
     j is_stack_array_ret
 
 is_stack_array_ret_0:
@@ -223,6 +232,7 @@ stack_array_print:
 
     mv s1, a0		# sa struct adr to s1.
 
+    mv a0, s1
     jal is_stack_array
     beqz a0, stack_array_print_arg_err
 
@@ -241,6 +251,7 @@ stack_array_print:
     # Print stack address.
     ld a0, sa_stack_ptr(s1)
     excall t0, prthex
+    excall t0, prtnl
 
     # Print stack.
     ld a0, sa_stack_ptr(s1)
@@ -285,6 +296,7 @@ stack_array_alloc:
 
     mv s1, a0		# Save arg.
 
+    mv a0, s1
     jal is_stack_array
     beqz a0, stack_array_alloc_arg_err
 
@@ -326,6 +338,7 @@ stack_array_dealloc:
     mv s1, a0		# sa struct adr to s1.
     mv s2, a1		# sa item adr to s2.
 
+    mv a0, s1
     jal is_stack_array
     beqz a0, stack_array_dealloc_arg_err
 
@@ -367,8 +380,7 @@ sad_loop:
     ret
 
 sad_err:
-    mv s1, a0		# Save stack ptr.
-
+    mv a0, s1
     excall t0, stack_print_name
 
     la a0, sca_err_str
@@ -384,7 +396,6 @@ stack_array_dealloc_arg_err:
     li a0, 19
     excall t0, endprg
 
-
 # Print a summary of stack_array usage.
 # In: a0  - Ptr to a stack_array instance.
 # Ret: Nothing.
@@ -399,6 +410,7 @@ stack_array_left:
 
     mv s1, a0		# Save arg.
 
+    mv a0, s1
     jal is_stack_array
     beqz a0, stack_array_left_arg_err
 
@@ -419,6 +431,7 @@ stack_array_left_arg_err:
     li a0, 21
     excall t0, endprg
 
+#### Immutable Data ####
 
 # External function addresses.
 ##############################
@@ -438,11 +451,9 @@ stack_contains_addr:	.dword stack_contains
 stack_print_addr:	.dword stack_print
 stack_new_addr:		.dword stack_new
 
-#### Immutable Data ####
-
 # stack_array_new:
-invalid_num_words_str:     .asciz "stack_array_new: Invalid number of words"
-invalid_num_items_str:     .asciz "stack_array_new: Invalid number of items"
+stack_array_new_num_words_err_str:	.asciz "stack_array_new: Invalid number of words per item.\n"
+stack_array_new_num_items_err_str:	.asciz "stack_array_new: Invalid number of items.\n"
 
 # stack_array_print:
 stk_adr_str:	.asciz "\nStack addr: "

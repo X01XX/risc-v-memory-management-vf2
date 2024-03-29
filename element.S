@@ -44,26 +44,30 @@
 # SE:  Stack array allocated and inititialized.
 #############################################################
 element_init:
+
     # Configure stack.
-    addi sp, sp, d1n		# Advance sp for stack frame.
+    addi sp, sp, d3n
     sd ra, 0(sp)                # Save ra.
+    sd s1, d1(sp)               # Save s1.
+    sd s2, d2(sp)               # Save s2.
 
-    la t1, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-    ld t1, 0(t1)
-    ld t1, 0(t1)		# Check for previous inititalization.
+    mv s1, a0		# Save number items.
 
-    bnez t1, element_init_err
+    # Load sa ptr addr.
+    la s2, element_sa_ptr_addr
+    ld s2, 0(s2)
 
+    # Check for previous inititalization.
+    ld t0, 0(s2)
+    bnez t0, element_init_err
+
+    mv a0, s1			# Load number items.
     li a1, element_words	# Load number words per item.
     la a2, element_str		# Load stack_array decription ptr.
     excall t0, stack_array_new		# sa struct adr to a0
 
-
     # Save element sa ptr.
-    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-    ld t0, 0(t0)
-
-    sd a0, 0(t0)
+    sd a0, 0(s2)
 
     j element_init_ret
 
@@ -73,11 +77,12 @@ element_init_err:
 
 element_init_ret:
     # Restore stack.
+    ld s2, d2(sp)               # Restore s2.
+    ld s1, d1(sp)               # Restore s1.
     ld ra, 0(sp)		# Restore ra.
-    addi sp, sp, d1             # Restore sp.
+    addi sp, sp, d3             # Restore sp.
 
     ret
-
 
 # Return a new element.
 # In:  a0 = Ptr to name string.
@@ -102,12 +107,13 @@ element_new:
     ld a0, 0(t0)		# Get element stack_array pointer.
 
     beqz a0, element_sa_not_inititalized_err
+
     excall t0, stack_array_alloc	# Get a new item into a0, or stack empty.
 
     # Load values into element instance.
-    li t0, element_id_val	# Load the element id value.
-    sw t0, element_id(a0)	# Set element ID.
-    sd s1, element_name(a0)	# Store element name ptr.
+    li t0, element_id_val		# Set element ID.
+    sw t0, element_id(a0)
+    sd s1, element_name(a0)		# Store element name ptr.
     sw s2, element_atomic_number(a0)	# Store atomic number.
 
     # Restore stack.
@@ -133,16 +139,16 @@ element_dealloc:
     mv s1, a0		# Save arg.
 
     # Check instance ID.
+    mv a0, s1
     jal is_element
     beqz a0, element_dealloc_err	# Error if not an element.
 
     # Deallocate.
-    mv a1, s1			# Item ptr to a1.
-    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-    ld t0, 0(t0)		# Get element stack_array pointer addr.
-    ld a0, 0(t0)		# Get element stack_array pointer.
+    la t0, element_sa_ptr_addr	# Load Element SA ptr.
+    ld t0, 0(t0)
+    ld a0, 0(t0)
 
-    beqz a0, element_sa_not_inititalized_err
+    mv a1, s1			# Load element instance ptr.
 
     excall t0, stack_array_dealloc	# Add instance back to element stack.
 
@@ -159,7 +165,6 @@ element_dealloc_err:
 
     addi a0, x0, 35		# Load return code.
     excall t0, endprg
-
 
 # Check if a ptr references a element instance.
 # In: a0 = Ptr to instance.
@@ -178,8 +183,9 @@ is_element:
     excall t0, mem_within	# Check if in local memory.
     beqz a0, is_element_ret_false
 
-    lwu t0, element_id(s1)  # Load instance ID val.
-    li t1, element_id_val  # Load expected ID val.
+    # Check ID.
+    lwu t0, element_id(s1)
+    li t1, element_id_val 
     bne t0, t1, is_element_ret_false
 
     li a0, 1
@@ -275,9 +281,10 @@ element_stack_print:
     addi sp, sp, d1n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
 
-    la t0, element_sa_ptr_addr	# Load addr of word containing element sa ptr.
-    ld t0, 0(t0)		# Load element stack ptr addr.
-    ld a0, 0(t0)		# Load element stack ptr.
+    # Load Element SA ptr.
+    la a0, element_sa_ptr_addr
+    ld a0, 0(a0)
+    ld a0, 0(a0)
 
     beqz a0, element_sa_not_inititalized_err
 
@@ -303,6 +310,7 @@ element_print:
     mv s1, a0			# Save a0.
 
     # Check instance ID.
+    mv a0, s1
     jal is_element
     beqz a0, element_print_arg_err	# Error if not an element.
 
@@ -338,7 +346,6 @@ element_print_arg_err:
     li a0, 38		# Load return code.
     excall t0, endprg
 
-
 # Print an element linked list.
 # In:  a0 = ptr to a link.
 #      a1 = ptr to a string to use as a separator.
@@ -347,11 +354,10 @@ element_print_arg_err:
 ##################################################
 element_list_print:
     # Configure stack.
-    addi sp, sp, d4n		# Advance sp for stack frame.
+    addi sp, sp, d3n		# Advance sp for stack frame.
     sd ra, 0(sp)                # Save ra.
     sd s1, d1(sp)		# Save s1.
     sd s2, d2(sp)		# Save s2.
-    sd s3, d3(sp)		# Save s3.
 
     # Save args.
     mv s1, a0			# Save link ptr.
@@ -373,9 +379,7 @@ element_list_print:
 epl_loop_next:
     mv a0, s1			# Load link value, to a0.
     excall t0, link_get_val
-    mv s3, a0
 
-    mv a0, s3			# Print it.
     jal element_print
 
     mv a0, s1			# Load link next.
@@ -396,11 +400,10 @@ epl_loop_end:
     excall t0, prtchr
 
     # Restore stack.
-    ld s3, d3(sp)		# Restore s2.
     ld s2, d2(sp)		# Restore s2.
     ld s1, d1(sp)		# Restore s1.
     ld ra, 0(sp)		# Restore ra.
-    addi sp, sp, d4             # Restore sp.
+    addi sp, sp, d3             # Restore sp.
 
     ret
 
@@ -410,7 +413,6 @@ element_list_print_arg_err:
 
     li a0, 39
     excall t0, endprg
-
 
 # Deallocate a element list.
 # In:  a0 = link instance ptr.
@@ -426,11 +428,9 @@ element_list_dealloc:
 
     # Save arg.
     mv s1, a0                   # Save link ptr.
-    mv s2, a0                   # Save link ptr.
 
-    # Check instance ID.
-    mv a0, s1			# Get link value.
-
+    # Check that arg is a Link.
+    mv a0, s1
     excall t0, is_link
     beqz a0, element_list_dealloc_arg_err
 
@@ -439,25 +439,28 @@ element_list_dealloc:
     excall t0, link_get_val
     beq a0, x0, edl_loop_end
 
+    # Deallocate elements in the list.
+    mv s2, a0                   # Init current link ptr.
+
 edl_loop_next:
-    mv a0, s1
+    mv a0, s2
     excall t0, link_get_val		# Get element ptr in a0.
 
     # Deallocate the element.
     jal element_dealloc
 
     # Point to the next link.
-    mv a0, s1
+    mv a0, s2
     excall t0, link_get_next
-    mv s1, a0
+    mv s2, a0
 
-    beq s1, x0, edl_loop_end
+    beq s2, x0, edl_loop_end
 
     j edl_loop_next
 
 edl_loop_end:
     # Deallocate the links in the list.
-    mv a0, s2
+    mv a0, s1
     excall t0, link_list_dealloc
 
     # Restore stack.
@@ -475,7 +478,6 @@ element_list_dealloc_arg_err:
     li a0, 40
     excall t0, endprg
 
-
 # Print inititalization error and exit.
 #######################################
 element_sa_not_inititalized_err:
@@ -484,7 +486,6 @@ element_sa_not_inititalized_err:
 
     li a0, 41
     excall t0, endprg
-
 
 # Print a summary of memory usage.
 # In:  Nothing.

@@ -23,8 +23,8 @@
 
 # Struct stack.
 	.equ	stack_id,	0	# 4 bytes, 1 word.
-	.equ	stack_start,	4	# 8 bytes, 2 words. Ptr to start of stack.
-	.equ	stack_end,	12	# 8 bytes, 2 words. stack_start + (wbyts * number items)
+	.equ	stack_start,	4	# 8 bytes, 2 words. Ptr to start of stack. Separate memory for stack items, not this.
+	.equ	stack_end,	12	# 8 bytes, 2 words. stack_start + (dword bytes * number items)
 	.equ	stack_tos,	20	# 8 bytes, 2 words. Current Top Of Stack.
 	.equ	stack_desc,	28	# 8 bytes, 2 words. Ptr to stack name string.
 	.equ    stack_words,	9	# Number words in this struct.
@@ -46,12 +46,12 @@
 # mem_init needs to be called from main before calling this.
 #
 # In:  a0, contains the number of items the stack will need to support.
-#      a1, contains a ptr to a string that will name the stack for error messages.
+#      a1, contains a ptr to a zero-terminated string that will name the stack
+#          for error messages.
 # Ret: a0, a ptr to the memory allocated for the stack (header).
 # SE:  Local memory available decreases.
 ##################################################################################
 stack_new:
-    blez a0, stack_new_no_words_err	# Check for zero, or negative, number of words.
 
     # Configure stack.
     addi sp, sp, d4n		# Advance sp for stack frame.
@@ -60,11 +60,17 @@ stack_new:
     sd s2, d2(sp)		# Save s2.
     sd s3, d3(sp)		# Save s3.
 
-    mv s1, a0			# Save stack number words.
+    mv s1, a0			# Save stack number items.
     mv s2, a1			# Save stack decription ptr.
 
+    # Check number items.
+    blez s1, stack_new_invalid_items_err	# Check for zero, or negative, number of words.
+    li t0, 0xFFFFFFFF
+    bgt s1, t0, stack_new_invalid_items_err
+
+    # Check the name is not empty, and no unprintable characters.
     mv a0, s2
-    jal check_name		# Check stack name is OK.
+    jal check_name
 
     li a0, stack_words		# Load number of stack struct words.
     excall t0, mem_alloc	# Get stack struct memory ptr into a0.
@@ -74,7 +80,7 @@ stack_new:
     sw t0, stack_id(s3)
 
     mv a0, s1			# Load stack size.
-    slli a0, a0, 1		# Multiply to change number items into words where there are 2 words per dword address.
+    slli a0, a0, 1		# Multiply to change number items, to number words, since the stack uses dwords.
     excall t0, mem_alloc	# Get stack memory ptr into a0.
 
     sd a0, stack_start(s3)	# Store stack memory ptr in stack struct.
@@ -98,15 +104,9 @@ stack_new:
     ret				# Return a0
 
 # Display invalid request, then halt.
-stack_new_no_words_err:
-    mv s3, a0		# Save number words.
-
-    la a0, stack_new_no_words_err_str
+stack_new_invalid_items_err:
+    la a0, stack_new_invalid_items_err_str
     excall t0, prtstr
-
-    mv a0, s3		# Load number words.
-    excall t0, prtdec	# Print number as base 10.
-    excall t0, prtnl
 
     li a0, 4	# Load return code
     excall t0, endprg
@@ -165,6 +165,7 @@ stack_push:
     mv s1, a0		# Save arg.
     mv s2, a1		# Save arg.
 
+    mv a0, s1
     jal is_stack
     beqz a0, stack_push_arg_err
 
@@ -197,15 +198,20 @@ stack_push_arg_err:
 
 # Display stack full error message, then halt.
 stack_full:
+    # Print "stack_push: "
+    la a0, stack_full_function_name_str
+    excall t0, prtstr
+
+    # Print stack name.
     ld a0, stack_desc(s1)
     excall t0, prtstr
 
-    la a0, sf_str
+    # Print ": stack full\n"
+    la a0, stack_full_str
     excall t0, prtstr
 
     li a0, 6	# Load return code
     excall t0, endprg
-
 
 # Pop a value from the a stack.
 # In:  a0 - ptr to a stack.
@@ -221,6 +227,7 @@ stack_pop:
 
     mv s1, a0		# Save arg.
 
+    mv a0, s1
     jal is_stack
     beqz a0, stack_pop_arg_err
 
@@ -245,6 +252,7 @@ stack_pop:
 
 # Print error, exit.
 stack_pop_arg_err:
+    # Pritn arg passed error
     la a0, stack_pop_arg_err_str
     excall t0, prtstr
 
@@ -253,7 +261,9 @@ stack_pop_arg_err:
 
 # Display stack empty error message, then halt.
 stack_empty:
-    mv a0, s1		# Save stack ptr.
+    # Print "stack_pop: "
+    la a0, stack_empty_function_name_str
+    excall t0, prtstr
 
     ld a0, stack_desc(s1)
     excall t0, prtstr
@@ -310,7 +320,6 @@ name_invalid_char:
     li a0, 10	# Load return code
     excall t0, endprg
 
-
 # Print the stack name.
 # In:  a0 - Ptr to stack.
 # Ret: Nothing.
@@ -324,10 +333,11 @@ stack_print_name:
 
     mv s1, a0		# Save stack ptr.
 
+    mv a0, s1
     jal is_stack
     beqz a0, stack_print_name_arg_err
 
-    # Print stack name prefix.
+    # Print "Stack Name: ".
     la a0, stack_print_name_prefix
     excall t0, prtstr
 
@@ -339,6 +349,7 @@ stack_print_name:
     ld s1, d1(sp)		# Restore s1.
     ld ra, 0(sp)		# Restore ra.
     addi sp, sp, d2		# Restore sp.
+
     ret
 
 # Print error, exit.
@@ -364,14 +375,17 @@ stack_print:
 
     mv s1, a0		# Save stack ptr.
 
+    # Check arg is a stack.
+    mv a0, s1
     jal is_stack
     beqz a0, stack_print_arg_err
 
+    # Print stack name.
     mv a0, s1
     jal stack_print_name
-
     excall t0, prtnl
 
+    # Print next string.
     la a0, stack_print_num_str
     excall t0, prtstr
 
@@ -379,29 +393,30 @@ stack_print:
 
     ld s3, stack_end(s1)	# Load stack end.
 
+    # Calc and print maximum number of items.
     sub t3, s3, s2		# Get dif in bytes.
-    srli a0, t3, dbyts		# Divide by word bytes.
+    srli a0, t3, dbyts		# Divide by dword bytes.
     excall t0, prtdec		# Print as base 10.
 
     excall t0, prtnl
 
+    # Print next string.
     la a0, stack_print_items_str
     excall t0, prtstr
 
+    # Print number items in use on stack.
     ld t1, stack_start(s1)	# Load stack start.
     ld t2, stack_tos(s1)	# Load stack tos.
-
     sub t0, t2, t1		# Get bytes difference.
     srli a0, t0, dbyts		# Divide by dword bytes.
     excall t0, prtdec		# Print number active items.
-
     excall t0, prtnl
 
-   # Loop to print each active item.
+    # Loop to print each active item.
     ld s3, stack_tos(s1)	# Load stack tos.
 
-sp_loop_next:
-    bgeu s2, s3, sp_loop_end	# Exit loop if at the end of the stack.
+stack_print_loop:
+    bgeu s2, s3, stack_print_ret	# Exit loop if at the end of the stack.
 
     ld a0, 0(s2)    		# load next item
     excall t0, prthex		# Print item in hex.
@@ -409,8 +424,10 @@ sp_loop_next:
     excall t0, prtnl
 
     addi s2, s2, d1		# Point to next item.
-    j sp_loop_next
-sp_loop_end:
+
+    j stack_print_loop
+
+stack_print_ret:
 
     # Restore stack.
     ld s3, d3(sp)		# Restore s3.
@@ -428,7 +445,6 @@ stack_print_arg_err:
     li a0, 12
     excall t0, endprg
 
-
 # Print summary of stack usage.
 # In:  a0 - ptr to a stack instance.
 # Ret: Nothing.
@@ -444,49 +460,59 @@ stack_left:
 
     mv s1, a0		# Save stack ptr.
 
+    mv a0, s1
     jal is_stack
     beqz a0, stack_left_arg_err
 
-    la a0, sl_str1	# Print Stack:
+    # Print first string.
+    la a0, sl_str1
     excall t0, prtstr
 
-    ld a0, stack_desc(s1)	# Print stack name.
+    # Print stack name.
+    ld a0, stack_desc(s1)
     excall t0, prtstr
 
-    la a0, sl_str2		# Print comma space.
+    # Print next string.
+    la a0, sl_str2
     excall t0, prtstr
 
+    # Calc number items left.
     ld t0, stack_start(s1)	# Load stack start.
     ld t1, stack_tos(s1)	# Load stack tos.
-
     sub t1, t1, t0		# Get dif in bytes.
     srli s2, t1, dbyts		# Divide by dword bytes.
 
+    # Print number items left.
     mv a0, s2
-    excall t0, prtdec		# Print items left as base 10.
+    excall t0, prtdec
 
     # Print "item(s) of"
-    la a0, sl_str3		# Print "item"
+    la a0, sl_str3
     excall t0, prtstr
 
     li t0, 1
-    beq s2, t0, sl_skip_plural
+    beq s2, t0, stack_left_skip_plural
 
+    # Print plural char.
     li a0, 's'
-    excall t0, prtchr		# Print "s"
+    excall t0, prtchr
 
-sl_skip_plural:
-    la a0, sl_str4		# Print " of "
+stack_left_skip_plural:
+    # Print " of "
+    la a0, sl_str4
     excall t0, prtstr
 
+    # Calc total items.
     ld t0, stack_start(s1)	# Load stack start.
     ld t1, stack_end(s1)	# Load stack end.
-
     sub t1, t1, t0		# Get dif in bytes.
     srli a0, t1, dbyts		# Divide by dword bytes.
-    excall t0, prtdec		# Print total items as base 10.
 
-    la a0, sl_str5		# Print "left.".
+    # Print total items.
+    excall t0, prtdec
+
+    # Print "left."
+    la a0, sl_str5
     excall t0, prtstr
 
     # Restore stack.
@@ -520,46 +546,46 @@ stack_contains:
     sub t3, t2, t1		# Get dif in bytes.
     srli t3, t3, wbyts		# Divide by word bytes.
 
-sca_loop_next:
-    bgeu t1, t2, sca_loop_end	# Exit loop if at the end of the stack.
+stack_contains_loop:
+    bgeu t1, t2, stack_contains_false	# Return if at the end of the stack.
 
     ld t0, 0(t1) 		# load next item
-    beq t0, a1, sca_true	# Error if item found.
+    beq t0, a1, stack_contains_true	# Error if item found.
 
     addi t1, t1, d1		# Point to next item
-    j sca_loop_next
-sca_loop_end:
 
+    j stack_contains_loop
+
+stack_contains_false:
     li a0, 0			# Load a1 with false indicator.
     ret
 
-sca_true:
+stack_contains_true:
     li a0, 1			# Load a1 with true indicator.
     ret
 
 #### Immutable Data ####
 
 # stack_new:
-stack_new_no_words_err_str:    	.asciz "Invalid number of words "
+stack_new_invalid_items_err_str:    	.asciz "stack_new: Invalid number of items\n"
 
 # stack_push:
+stack_full_function_name_str:	.asciz "stack_push: "
 stack_push_arg_err_str:	.asciz	"stack_push: Arg passed is not a stack.\n"
-sf_str:			.asciz ": stack full\n"
+stack_full_str:			.asciz ": stack full\n"
 
 # stack_pop:
-stack_pop_arg_err_str:	.asciz	"stack_pop: Arg passed is not a stack.\n"
+stack_empty_function_name_str:	.asciz "stack_pop: "
+stack_pop_arg_err_str:		.asciz	"stack_pop: Arg passed is not a stack.\n"
 stack_empty_str:		.asciz ": stack empty\n"
 
 # check_name:
 check_name_empty_str:		.asciz "stack_new: Empty string for stack name?"
 check_name_char_str: 		.asciz "stack_new: Invalid character in stack name?\n"
 
-
-#### Immutable Data ####
-
 # stack_print_name:
 stack_print_name_arg_err_str:	.asciz	"stack_print_name: Arg passed is not a stack.\n"
-stack_print_name_prefix:	.asciz "\nStack Name: "
+stack_print_name_prefix:	.asciz "Stack Name: "
 
 # stack_print:
 stack_print_arg_err_str:	.asciz	"stack_print: Arg passed is not a stack.\n"
