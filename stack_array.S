@@ -17,9 +17,8 @@
 
 .include "macros.S"
 
-# Comment out these, to make deallocation faster, but harder to notice and track down logical errors.
+# Comment out this, to make deallocation faster, but allow inadvertant use of deallocated data.
 	.equ zero_memory, 1
-	.equ check_for_dups, 1
 
 # Doubleword sizes:
 	.equ d1, 8
@@ -338,23 +337,22 @@ stack_array_dealloc:
     mv s1, a0		# sa struct adr to s1.
     mv s2, a1		# sa item adr to s2.
 
+    # Check arg 1.
     mv a0, s1
     jal is_stack_array
     beqz a0, stack_array_dealloc_arg_err
 
-.ifdef check_for_dups
-    # Check address is not already in the stack.
-    # This section can be commented out for greater speed.
-    ld a0, sa_stack_ptr(s1)
-    mv a1, s2
-    excall t0, stack_contains
-    li t0, 1
-    beq a0, t0, sad_err
-.endif
+    # Check arg 2 for non-struct.
+    mv a0, s2
+    excall t0, mem_within
+    beqz a0, stack_array_dealloc_arg_err2
 
+    # Check arg 2 for double deallocation.
+    lw t0, 0(s2)
+    beqz t0, stack_array_dealloc_arg_err3
+ 
 .ifdef zero_memory
     # Zero out item memory.
-    # This section can be commented out for greater speed.
     lhu t0, sa_item_words(s1)	# Load words in item.
     mv t2, s2			# Item ptr to t2.
 sad_loop:
@@ -364,6 +362,9 @@ sad_loop:
     addi t0, t0, -1		# Decrement the item word counter.
 
     bnez t0, sad_loop
+.else
+    # zero out the struct ID.
+    sw x0, 0(s1)
 .endif
 
     # Return item to stack.
@@ -391,6 +392,20 @@ sad_err:
 
 stack_array_dealloc_arg_err:
     la a0, stack_array_dealloc_arg_err_str
+    excall t0, prtstr
+
+    li a0, 19
+    excall t0, endprg
+
+stack_array_dealloc_arg_err2:
+    la a0, stack_array_dealloc_arg_err_str2
+    excall t0, prtstr
+
+    li a0, 19
+    excall t0, endprg
+
+stack_array_dealloc_arg_err3:
+    la a0, stack_array_dealloc_arg_err_str3
     excall t0, prtstr
 
     li a0, 19
@@ -466,7 +481,9 @@ stack_array_alloc_arg_err_str:	.asciz	"stack_array_alloc: Arg passed is not a st
 
 # stack_array_dealloc:
 sca_err_str:	.asciz "stack_array_dealloc: Item already in stack\n"
-stack_array_dealloc_arg_err_str:	.asciz	"stack_array_dealloc: Arg passed is not a stack array.\n"
+stack_array_dealloc_arg_err_str:	.asciz	"stack_array_dealloc: Arg passed is not a stack_array.\n"
+stack_array_dealloc_arg_err_str2:	.asciz	"stack_array_dealloc: Arg passed is not a struct.\n"
+stack_array_dealloc_arg_err_str3:	.asciz	"stack_array_dealloc: Arg passed may already be deallocated.\n"
 
 # stack_array_left:
 stack_array_left_arg_err_str:	.asciz	"stack_array_left: Arg passed is not a stack array.\n"
