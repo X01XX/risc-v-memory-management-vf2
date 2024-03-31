@@ -364,7 +364,7 @@ sad_loop:
     bnez t0, sad_loop
 .else
     # zero out the struct ID.
-    sw x0, 0(s1)
+    sw x0, 0(s2)
 .endif
 
     # Return item to stack.
