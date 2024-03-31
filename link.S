@@ -67,6 +67,7 @@ link_init:
     # Allocate and configure new SA.
     li a1, link_words   # Load number words per item.
     la a2, link_str     # Load stack_array decription ptr.
+    li a3, link_id_val	# Load struct ID.
     excall t0, stack_array_new # sa struct adr to a0
 
     sd a0, 0(s1)		# Store stack_array address.
@@ -111,8 +112,8 @@ link_new:
     excall t0, stack_array_alloc	# Get a new link instance ptr, in a0.
 
     # Store values into instance.
-    li t0, link_id_val		# Set link id.
-    sw t0, link_id(a0)
+    #li t0, link_id_val		# Set link id.
+    #sw t0, link_id(a0)
     sd s1, link_val(a0)		# Store link value ptr.
     sd s2, link_next(a0)	# Store link next ptr.
 

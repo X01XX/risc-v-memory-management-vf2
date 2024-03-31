@@ -1,46 +1,46 @@
 
 Stack_Array addr: 0x13008
-Stack addr: 0x13020
+Stack addr: 0x13024
 Stack Name: Link
 Max Items: 3
 Number Available Items: 3
-0x1305C
-0x13070
-0x13084
-Array addr: 0x1305C
+0x13060
+0x13074
+0x13088
+Array addr: 0x13060
 
-Stack_Array addr: 0x13098
-Stack addr: 0x130B0
+Stack_Array addr: 0x1309C
+Stack addr: 0x130B8
 Stack Name: Element
 Max Items: 3
 Number Available Items: 3
-0x130EC
-0x130FC
-0x1310C
-Array addr: 0x130EC
+0x130F4
+0x13104
+0x13114
+Array addr: 0x130F4
 
 List: ([Name: Hydrogen, AN: 1], [Name: Helium, AN: 2])
 
-Allocate-only memory: 1931 Words of 2000 left.
+Allocate-only memory: 1929 Words of 2000 left.
 Stack: Link,  1 item of 3 left.
 Stack: Element,  1 item of 3 left.
 Len: 2 Empty: 0
 
 Stack_Array addr: 0x13008
-Stack addr: 0x13020
+Stack addr: 0x13024
 Stack Name: Link
 Max Items: 3
 Number Available Items: 1
-0x1305C
-Array addr: 0x1305C
+0x13060
+Array addr: 0x13060
 
-Stack_Array addr: 0x13098
-Stack addr: 0x130B0
+Stack_Array addr: 0x1309C
+Stack addr: 0x130B8
 Stack Name: Element
 Max Items: 3
 Number Available Items: 1
-0x130EC
-Array addr: 0x130EC
+0x130F4
+Array addr: 0x130F4
 
 popped: [Name: Hydrogen, AN: 1]
 
@@ -55,25 +55,25 @@ leaving ()
 Len: 0 Empty: 1
 
 Stack_Array addr: 0x13008
-Stack addr: 0x13020
+Stack addr: 0x13024
 Stack Name: Link
 Max Items: 3
 Number Available Items: 3
-0x1305C
-0x13070
-0x13084
-Array addr: 0x1305C
+0x13060
+0x13074
+0x13088
+Array addr: 0x13060
 
-Stack_Array addr: 0x13098
-Stack addr: 0x130B0
+Stack_Array addr: 0x1309C
+Stack addr: 0x130B8
 Stack Name: Element
 Max Items: 3
 Number Available Items: 3
-0x130EC
-0x130FC
-0x1310C
-Array addr: 0x130EC
+0x130F4
+0x13104
+0x13114
+Array addr: 0x130F4
 
-Allocate-only memory: 1931 Words of 2000 left.
+Allocate-only memory: 1929 Words of 2000 left.
 Stack: Link,  3 items of 3 left.
 Stack: Element,  3 items of 3 left.

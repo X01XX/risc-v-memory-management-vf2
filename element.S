@@ -64,6 +64,7 @@ element_init:
     mv a0, s1			# Load number items.
     li a1, element_words	# Load number words per item.
     la a2, element_str		# Load stack_array decription ptr.
+    li a3, element_id_val	# Load struct ID.
     excall t0, stack_array_new		# sa struct adr to a0
 
     # Save element sa ptr.
@@ -111,8 +112,8 @@ element_new:
     excall t0, stack_array_alloc	# Get a new item into a0, or stack empty.
 
     # Load values into element instance.
-    li t0, element_id_val		# Set element ID.
-    sw t0, element_id(a0)
+    #li t0, element_id_val		# Set element ID.
+    #sw t0, element_id(a0)
     sd s1, element_name(a0)		# Store element name ptr.
     sw s2, element_atomic_number(a0)	# Store atomic number.
 

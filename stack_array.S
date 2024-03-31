@@ -29,11 +29,13 @@
 	.equ d6, 48
 	.equ d7, 56
 	.equ d8, 64
+	.equ d9, 72
 
 	.equ d1n, -8
 	.equ d2n, -16
 	.equ d3n, -24
 	.equ d8n, -64
+	.equ d9n, -72
 
 	# Shift number bits to convert between words and bytes.
 	.equ wbyts, 2
@@ -44,7 +46,8 @@
 	.equ 	sa_array_ptr,  12	# 8 bytes, 2 words. Ptr to array memory.
 	.equ	sa_num_items,  20	# 2 bytes, 1/2 word. Max number items.
 	.equ	sa_item_words, 22	# 2 bytes, 1/2 word. Number words per item.
-	.equ	sa_words, 6		# Number words in this struct.
+	.equ	sa_struct_id,  24	# 4 bytes, 1 word.
+	.equ	sa_words, 7		# Number words in this struct.
 
 # ID to identify a stack_array instance.
 	.equ	stack_array_id_val, 1553
@@ -62,6 +65,7 @@
 # In:  a0 - Number of items.
 #      a1 - Number of words in each item.
 #      a2 - Pointer to string description.
+#      a3 - Struct ID.
 # Ret: a0 - Stack-array instance pointer.
 #      The stack is loaded with the ptr to each array item.
 #      The array ptr is not needed by the caller, it is only used in this function.
@@ -70,7 +74,7 @@
 stack_array_new:
 
     # Configure stack.
-    addi sp, sp, d8n	# Advance sp for stack frame.
+    addi sp, sp, d9n	# Advance sp for stack frame.
     sd ra, 0(sp)	# Save return addr.
     sd s1, d1(sp)	# Save s1.
     sd s2, d2(sp)	# Save s2.
@@ -79,10 +83,12 @@ stack_array_new:
     sd s5, d5(sp)	# Save s5.
     sd s6, d6(sp)	# Save s6.
     sd s7, d7(sp)	# Save s7.
+    sd s8, d8(sp)	# Save s8.
 
     mv s1, a0		# Save number items.
     mv s2, a1		# Save number words per item.
     mv s3, a2		# Save ptr to description.
+    mv s8, a3		# Save struct ID.
 
     # Check number items.
     beqz s1, stack_array_new_num_items_err
@@ -108,6 +114,9 @@ stack_array_new:
 
     # Add words per item, to struct.
     sh s2, sa_item_words(s7)
+
+    # Store struct ID into SA struct.
+    sw s8, sa_struct_id(s7)
 
     # Allocate new stack.
     mv	a0, s1			# Load number of items.
@@ -160,8 +169,9 @@ ret:
     ld s5, d5(sp)	# Restore s5.
     ld s6, d6(sp)	# Restore s6.
     ld s7, d7(sp)	# Restore s7.
+    ld s8, d8(sp)	# Restore s8.
     ld ra, 0(sp)	# Restore ra.
-    addi sp, sp, d8	# Restore sp.
+    addi sp, sp, d9	# Restore sp.
 
     ret			# Return a0
 
@@ -305,6 +315,10 @@ stack_array_alloc:
     # Get item from stack, into a0.
     excall t0, stack_pop
 
+    # Set struct ID.
+    lw t0, sa_struct_id(s1)
+    sw t0, 0(a0)
+
     # Restore stack.
     ld s1, d1(sp)		# Restore s1.
     ld ra, 0(sp)		# Restore ra.
@@ -342,14 +356,15 @@ stack_array_dealloc:
     jal is_stack_array
     beqz a0, stack_array_dealloc_arg_err
 
-    # Check arg 2 for non-struct.
+    # Check arg 2 struct in local memory.
     mv a0, s2
     excall t0, mem_within
     beqz a0, stack_array_dealloc_arg_err2
 
-    # Check arg 2 for double deallocation.
-    lw t0, 0(s2)
-    beqz t0, stack_array_dealloc_arg_err3
+    # Check arg 2 for sturct ID.
+    lw t1, sa_struct_id(s1)
+    lw t2, 0(s2)
+    bne t1, t2, stack_array_dealloc_arg_err2
  
 .ifdef zero_memory
     # Zero out item memory.
@@ -399,13 +414,6 @@ stack_array_dealloc_arg_err:
 
 stack_array_dealloc_arg_err2:
     la a0, stack_array_dealloc_arg_err_str2
-    excall t0, prtstr
-
-    li a0, 19
-    excall t0, endprg
-
-stack_array_dealloc_arg_err3:
-    la a0, stack_array_dealloc_arg_err_str3
     excall t0, prtstr
 
     li a0, 19
@@ -483,7 +491,6 @@ stack_array_alloc_arg_err_str:	.asciz	"stack_array_alloc: Arg passed is not a st
 sca_err_str:	.asciz "stack_array_dealloc: Item already in stack\n"
 stack_array_dealloc_arg_err_str:	.asciz	"stack_array_dealloc: Arg passed is not a stack_array.\n"
 stack_array_dealloc_arg_err_str2:	.asciz	"stack_array_dealloc: Arg passed is not a struct.\n"
-stack_array_dealloc_arg_err_str3:	.asciz	"stack_array_dealloc: Arg passed may already be deallocated.\n"
 
 # stack_array_left:
 stack_array_left_arg_err_str:	.asciz	"stack_array_left: Arg passed is not a stack array.\n"
