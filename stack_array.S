@@ -100,6 +100,9 @@ stack_array_new:
     li t0, 0xFFFF
     bgt s2, t0, stack_array_new_num_words_err
 
+    # Check struct ID
+    beqz s8, stack_array_new_struct_id_err
+
     # Allocate sa struct.
     li	a0, sa_words		# Load number words in SA struct.
     excall t0, mem_alloc	# Get ptr to array into a0.
@@ -187,6 +190,13 @@ stack_array_new_num_words_err:
     excall t0, prtstr
 
     li a0, 16	# Load return code.
+    excall t0, endprg
+
+stack_array_new_struct_id_err:
+    la a0, stack_array_new_struct_id_err_str
+    excall t0, prtstr
+
+    li a0, 42	# Load return code.
     excall t0, endprg
 
 
@@ -477,6 +487,7 @@ stack_new_addr:		.dword stack_new
 # stack_array_new:
 stack_array_new_num_words_err_str:	.asciz "stack_array_new: Invalid number of words per item.\n"
 stack_array_new_num_items_err_str:	.asciz "stack_array_new: Invalid number of items.\n"
+stack_array_new_struct_id_err_str:	.asciz "stack_array_new: Invalid, zero, strcut ID.\n"
 
 # stack_array_print:
 stk_adr_str:	.asciz "\nStack addr: "

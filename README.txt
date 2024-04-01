@@ -12,8 +12,8 @@ This allows any number of stack-arrays, without using up registers.
 
 Allocation is very fast.
 
-Commenting out an error check, and memory zeroing, could make deallocation as fast as allocation,
-with greater risk.  See the zero_memory and check_for_dups .equs at the begining of stack_array.S.
+Commenting out memory zeroing, could make deallocation as fast as allocation,
+with greater risk.  See the zero_memory .equ at the begining of stack_array.S.
 
 Function to file:
 
@@ -27,7 +27,7 @@ Allocate-deallocate memory: stack.a, stack_array.a
 
    An instance supports one kind of struct, so multiple instances for multiple structs.
 
-   Deallocation can be made faster by commenting out the first one, or two, equs in the file.
+   Deallocation can be made faster by commenting out the first equ in the file.
 
 Linked list struct, memory, methods: link.a
 
@@ -43,7 +43,7 @@ make
 ./main
 
 
-Return codes:
+Return codes ( A descriptive text will, print for an error ):
 
 Main:
 
@@ -109,6 +109,8 @@ Stack_array:
     15 - Number items is zero.
 
     16 - Number words, per item, is zero.
+
+    42 - Invalid, zero, struct ID.
 
   stack_array_print:
 
