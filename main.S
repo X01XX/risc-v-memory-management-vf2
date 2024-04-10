@@ -6,12 +6,6 @@
 # Global labels:
 	.global _start
 
-	.global stack_new
-	.global stack_push
-	.global stack_pop
-	.global stack_print
-	.global stack_contains
-
 # Doubleword sizes.
 	.equ d1, 8
 
