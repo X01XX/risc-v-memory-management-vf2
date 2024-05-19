@@ -6,19 +6,11 @@
 #
 # Run stack_array_dealloc, to return an address that is no longer used.
 #
-#    There are two sections of code in stack_array_dealloc that can be skipped,
-#    for greater speed, but lower detection of errors.  See first equs.
-#
-#    It does not check for invalid addresses, being deallocated, but that can be done by the caller.
-#
 # See stack_array struct, below.
 
 .text
 
 .include "macros.S"
-
-# Comment out this, to make deallocation faster, but allow inadvertant use of deallocated data.
-	.equ zero_memory, 1
 
 # Doubleword sizes:
 	.equ d1, 8
@@ -376,21 +368,9 @@ stack_array_dealloc:
     lw t2, 0(s2)
     bne t1, t2, stack_array_dealloc_arg_err2
  
-.ifdef zero_memory
-    # Zero out item memory.
-    lhu t0, sa_item_words(s1)	# Load words in item.
-    mv t2, s2			# Item ptr to t2.
-sad_loop:
-    sw x0, 0(t2)		# Zero out a word
-
-    addi t2, t2, 4		# Increment the item word pointer.
-    addi t0, t0, -1		# Decrement the item word counter.
-
-    bnez t0, sad_loop
-.else
-    # zero out the struct ID.
+    # Zero out the struct ID.
+    # Functions that expect a stuct argument should check for the expected ID.
     sw x0, 0(s2)
-.endif
 
     # Return item to stack.
     ld a0, sa_stack_ptr(s1)
