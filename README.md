@@ -34,3 +34,5 @@ Lists have to contain only one type of pstruct.
 Instances of stacks may be used without any corresponding array, by running stack_new.
 
 If working with pstruct addresses on a stand-alone stack, it can be detected that the last copy of an address has been popped off the stack, by running stack_contains, and therefore it is ready to be deallocated.
+
+See the forth-memory-management project for more development, which may be added here at a later date.
