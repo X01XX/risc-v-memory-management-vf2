@@ -3,6 +3,8 @@ A simple memory management method for progams written in GNU 64-bit Assembler La
 
 This project may make large Assembler Language programs more practical by enabling/conventionlizing structs, linked lists, allocation and deallocation. 
 
+I'm not doing anything complex here, it should be easy to port.
+
 Define pseudo-structs (pstructs) as a contiguous series of named/labeled field offsets.
 
 Define an array of pstructs, then allocate and deallocate pstructs from the array.
