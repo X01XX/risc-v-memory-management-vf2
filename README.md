@@ -48,6 +48,7 @@ date, but would make it harder to port.
   
     Allocation counting. On allocation, increment a number saved in the array-stack.
   
-    Lists with sub-lists and multiple structs, parsing a list from a string.
-    Keep a list, of struct-info structs, allowing printing, deallocating, and string parsing.
+    Support lists with sub-lists and different structs, parsing a list from a string.
+    Keep a list, of struct-info structs, containing struct name and function addresses for
+    printing, deallocating, and string parsing.
 </pre>
