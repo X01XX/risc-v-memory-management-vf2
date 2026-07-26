@@ -45,6 +45,6 @@ See the forth-memory-management project for more development, which may be added
     Allocation counting and display.
   
     Lists with sub-lists and multiple structs, parsing a list from a string.
-<\pre>
+</pre>
 
 
