@@ -36,9 +36,9 @@ Lists have to contain only one type of pstruct.
 Instances of stacks may be used without any corresponding array, by running stack_new.
 
 See the forth-memory-management project for more development, which may be added here at a later date, but would make it harder to port.
-<p>Guaranteed memory-leak detection.  At program end, check each instance address has been returned to its stack.</p>
-<p>Memory usage tuning, how close did each array-stack get to running out of memory?</p>
-<p>Allocation counting and display.</p>
-<p>Lists with sub-lists and multiple structs, parsing a list from a string.</p>
+<p style="margin-left: 40px;>Guaranteed memory-leak detection.  At program end, check each instance address has been returned to its stack.</p>
+<p style="margin-left: 40px;>Memory usage tuning, how close did each array-stack get to running out of memory?</p>
+<p style="margin-left: 40px;>Allocation counting and display.</p>
+<p style="margin-left: 40px;>Lists with sub-lists and multiple structs, parsing a list from a string.</p>
 
 
