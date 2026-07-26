@@ -17,11 +17,11 @@ The special-purpose stack is initialized with the address of each array pstruct.
 
 Allocation and deallocation is fairly fast because it involves only popping or pushing the stack.
 
-The capacity of each stack-array, is configurable at instance creation.
+The capacity of each array-stack, is configurable at instance creation.
 
-Within the limit of the stack-array capacity of pstructs (which you set), allocated at the same time, an infinite number of allocations and deallocations are possible.
+Within the limit of the array-stack capacity of pstructs (which you set), allocated at the same time, an infinite number of allocations and deallocations are possible.
 
-Allocations, and deallocations, causes increasing disorder of the addresses on the stack, which has no effect on the utility, or speed, of the stack-array.
+Allocations, and deallocations, causes increasing disorder of the addresses on the stack, which has no effect on the utility, or speed, of the array-stack.
 
 The example uses a small linked list of pstructs containing information on elements.  The element.S file can be copied and changed for any number of other pstructs.
 
@@ -35,10 +35,10 @@ Lists have to contain only one type of pstruct.
 
 Instances of stacks may be used without any corresponding array, by running stack_new.
 
-See the forth-memory-management project for more development, which may be added here at a later date:
-Guaranteed memory-leak detection.  At program end, check each instance address has been returned to its stack.
-Lists with sub-lists and multiple structs, parsing a list from a string.
-Memory usage tuning: How close did the program get to running out of memory?
-Allocation counting and display.
+See the forth-memory-management project for more development, which may be added here at a later date, but would make it harder to port.
+<p>Guaranteed memory-leak detection.  At program end, check each instance address has been returned to its stack.</p>
+<p>Memory usage tuning, how close did each array-stack get to running out of memory?</p>
+<p>Allocation counting and display.</p>
+<p>Lists with sub-lists and multiple structs, parsing a list from a string.</p>
 
 
