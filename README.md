@@ -36,8 +36,9 @@ Lists have to contain only one type of pstruct.
 Instances of stacks may be used without any corresponding array, by running stack_new.
 
 <pre>
-See the forth-memory-management project for more development, which may be added here at a later
-date, but would make it harder to port.
+See the forth-memory-management project for more development, which could be added here at a
+later date. But that would make it harder to port, and assembler language programmers like to
+get into the details and do it themselves.
   
     Guaranteed memory-leak detection.  At program end, check that each instance address in an
     array has been returned to its stack.
