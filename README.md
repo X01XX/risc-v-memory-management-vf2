@@ -53,5 +53,5 @@ get into the details and do it themselves.
     Keep a list of struct-info structs, containing struct name and function addresses for
     printing, deallocating, and string parsing.
 
-    See example11.txt in the forth-memory-management project.
+    See example7.txt and example11.txt in the forth-memory-management project.
 </pre>
